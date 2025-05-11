@@ -175,6 +175,24 @@
             font-size: 1.4rem;
             margin-bottom: 4px;
         }
+
+        /* 分享数据开关样式 */
+        .share-data-toggle {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .share-data-toggle input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+        }
+        
+        .share-data-toggle label {
+            font-size: 0.9rem;
+            color: #555;
+        }
     </style>
 </head>
 <body>
@@ -188,6 +206,10 @@
 
             <div class="input-area">
                 <input type="text" class="input-field" id="user-input" placeholder="输入您的运动健康问题...">
+                <div class="share-data-toggle" style="display: {% if user.is_authenticated %}flex{% else %}none{% endif %}">
+                    <input type="checkbox" id="share-data-toggle">
+                    <label for="share-data-toggle">分享我的健康数据以获得个性化建议</label>
+                </div>
                 <button id="send-btn" class="chat-btn">发送</button>
                 <button id="clear-btn" class="chat-btn secondary">清空聊天</button>
             </div>
@@ -212,13 +234,17 @@
                     
                     try {
                         // 调用API
+                        const shareData = document.getElementById('share-data-toggle').checked;
                         const response = await fetch('/coach/ai-coach-api', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
                                 'X-CSRFToken': '{{ csrf_token }}'
                             },
-                            body: JSON.stringify({ message: input })
+                            body: JSON.stringify({ 
+                                message: input,
+                                share_user_data: shareData 
+                            })
                         });
                         
                         const data = await response.json();

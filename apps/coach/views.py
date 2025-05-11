@@ -5,6 +5,7 @@ from django.views.decorators.http import require_http_methods
 import requests
 import json
 import traceback
+import datetime
 
 
 def index(request):
@@ -24,6 +25,8 @@ def ai_coach_api(request):
             user_message = request_data.get('message')
             if not user_message or not isinstance(user_message, str):
                 return JsonResponse({'error': 'Message must be a non-empty string'}, status=400)
+            
+            share_user_data = request_data.get('share_user_data', False)
         except json.JSONDecodeError:
             return JsonResponse({'error': 'Invalid JSON data'}, status=400)
         
@@ -34,13 +37,44 @@ def ai_coach_api(request):
             "Content-Type": "application/json"
         }
         
+        # 准备系统提示
+        system_prompt = "你是一个专业的健身健康助手，专注于提供科学、实用的运动建议和健康指导。回答要简洁专业，使用中文。"
+        
+        # 如果用户选择分享数据且已登录
+        if share_user_data and request.user.is_authenticated:
+            try:
+                profile = request.user.profile
+                user_data = {
+                    "基本信息": {
+                        "性别": profile.get_gender_display() if profile.gender else "未设置",
+                        "年龄": (datetime.date.today().year - profile.birth_date.year) if profile.birth_date else "未设置",
+                        "身高(cm)": profile.height,
+                        "体重(kg)": profile.weight,
+                        "目标体重(kg)": profile.target_weight
+                    },
+                    "训练情况": {
+                        "活动水平": profile.get_activity_level_display() if profile.activity_level else "未设置",
+                        "训练目标": profile.get_training_goal_display() if profile.training_goal else "未设置",
+                        "训练经验": profile.get_experience_level_display() if profile.experience_level else "未设置"
+                    },
+                    "健康状况": {
+                        "医疗状况": profile.medical_conditions if profile.medical_conditions else "无",
+                        "受伤史": profile.injuries if profile.injuries else "无",
+                        "过敏史": profile.allergies if profile.allergies else "无"
+                    }
+                }
+                system_prompt += f"\n\n当前用户数据如下(请参考这些信息提供个性化建议):\n{json.dumps(user_data, ensure_ascii=False, indent=2)}"
+            except Exception as e:
+                print(f"获取用户数据失败: {str(e)}")
+                traceback.print_exc()
+        
         # 调用DeepSeek API
         payload = {
             "model": "deepseek-chat",
             "messages": [
                 {
                     "role": "system",
-                    "content": "你是一个专业的健身健康助手，专注于提供科学、实用的运动建议和健康指导。回答要简洁专业，使用中文。"
+                    "content": system_prompt
                 },
                 {
                     "role": "user", 
