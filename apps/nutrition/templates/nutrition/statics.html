@@ -1,0 +1,1889 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>健康数据看板</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #6B8DD6;
+            --secondary-color: #8E37D7;
+            --accent-color: #4CAF50;
+            --background: #f8f9ff;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--background);
+            margin: 0;
+            padding: 0 0 80px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 2rem;
+            font-size: 2.2rem;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr;  /* 改为单列布局 */
+            gap: 2rem;
+            max-width: 800px;  /* 限制最大宽度 */
+            margin: 0 auto;  /* 居中显示 */
+        }
+
+        .chart-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .chart-card:hover {
+            transform: translateY(-5px);
+        }
+
+        canvas {
+            max-width: 100%;
+            margin: 1.5rem 0;
+            height: 400px !important;  /* 增加图表高度 */
+            aspect-ratio: 16/9;  /* 添加宽高比 */
+        }
+
+        /* 切换按钮样式 */
+        .chart-toggle {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            justify-content: center;
+        }
+
+        .toggle-btn {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            background: white;
+            color: #666;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            min-width: 120px;
+        }
+
+        .toggle-btn.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .toggle-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        /* 统一导航栏样式 */
+        .nav-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 12px 0;
+            display: flex;
+            justify-content: space-around;
+            box-shadow: 0 -4px 12px rgba(0,0,0,0.05);
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #666;
+            padding: 8px 16px;
+            border-radius: 12px;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+
+        .nav-item.active {
+            color: var(--primary-color);
+            background: rgba(107, 141, 214, 0.1);
+        }
+
+        .nav-item i {
+            font-size: 1.4rem;
+            margin-bottom: 4px;
+        }
+
+        /* 图表容器 */
+        .chart-container {
+            display: none;
+            grid-column: span 1;  /* 每个容器占据一列 */
+        }
+
+        .chart-container.active {
+            display: block;
+        }
+        
+        /* 增强图表容器的响应式样式 */
+        .chart-scroll-container {
+            position: relative;
+            overflow-x: auto;
+            margin: 1rem 0;
+            border-radius: 8px;
+            background-color: rgba(255, 255, 255, 0.5);
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.02);
+            max-width: 100%;
+        }
+        
+        .chart-inner-container {
+            min-width: 100%;
+            /* 当数据点超过10个时，保证每个数据点有足够的宽度 */
+            width: max-content;
+            padding: 15px;
+        }
+        
+        /* 改进有氧训练图表外观 */
+        #cardio-chart-container .chart-scroll-container {
+            background: linear-gradient(to bottom, rgba(255, 247, 245, 0.7), rgba(240, 249, 255, 0.7));
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        
+        /* 运动表现专属样式 */
+        .performance-chart {
+            background: rgba(255, 255, 255, 0.5);
+            padding: 1.5rem;
+            border-radius: 12px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            min-height: 400px;
+        }
+        
+        .performance-chart canvas {
+            flex: 1;
+            width: 100% !important;
+            height: 100% !important;
+            max-height: 400px !important;
+            filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.05));
+        }
+
+        /* 滚动导航按钮 */
+        .chart-nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.5rem;
+        }
+        
+        .chart-nav-btn {
+            padding: 0.5rem 1rem;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .chart-nav-btn:hover {
+            background: #5272b1;
+            transform: translateY(-2px);
+        }
+        
+        .chart-nav-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* 输入表单容器样式 */
+        .input-forms-container {
+            display: grid;
+            grid-template-columns: 3fr 1fr; /* 分配更多空间给营养输入 */
+            gap: 1.5rem;
+            margin: 2rem auto;
+            max-width: 1200px;
+        }
+
+        .input-form {
+            background: white;
+            padding: 1.2rem;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease;
+            height: auto;
+            min-height: 150px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .input-form h4 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .nutrition-inputs {
+            display: flex;
+            flex-direction: row;
+            gap: 0.5rem;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            flex: 1;
+        }
+
+        .water-input-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            padding: 0;
+            flex: 1;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .nutrition-form .input-group {
+            flex: 1;
+            min-width: 80px;
+        }
+
+        .input-group label {
+            color: #2c3e50;
+            font-size: 0.85rem;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+            text-align: center;
+        }
+
+        .input-group input {
+            width: 100%;
+            max-width: 100px;
+            padding: 0.6rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+            background: #f8f9fa;
+        }
+
+        .nutrition-form .input-group input {
+            max-width: 90px;
+        }
+
+        .water-form .input-group input {
+            max-width: 120px;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 0.6rem;
+            margin-top: 0.5rem;
+            background: #64B5F6;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            letter-spacing: 0.5px;
+        }
+
+        .submit-btn:hover {
+            background: #1976D2;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(25, 118, 210, 0.2);
+        }
+
+        .nutrition-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            max-width: 1200px;
+            margin: 0 auto 2rem;
+        }
+
+        .nutrition-chart {
+            background: white;
+            padding: 2rem;
+            border-radius: 16px;
+            height: 550px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            position: relative;
+        }
+
+        .nutrition-toggle {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            justify-content: center;
+        }
+
+        .nutrition-toggle .toggle-btn {
+            padding: 0.6rem 1.2rem;
+            border: none;
+            border-radius: 8px;
+            background: white;
+            color: #666;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            min-width: 100px;
+        }
+
+        .nutrition-toggle .toggle-btn.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .nutrition-toggle .toggle-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .nutrition-chart canvas {
+            width: 100% !important;
+            height: 100% !important;
+            max-height: 450px !important;  /* 增加最大高度 */
+            aspect-ratio: 1;
+            margin: 0 auto;
+        }
+
+        .water-chart {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 16px;
+            height: 550px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        .input-group input:focus {
+            border-color: #64B5F6;
+            box-shadow: 0 0 0 3px rgba(100, 181, 246, 0.15);
+            outline: none;
+            background: white;
+        }
+
+        .input-form:hover {
+            transform: translateY(-5px);
+        }
+
+        /* 水容器相关样式 */
+        .water-container {
+            width: 100%;
+            max-width: 250px;
+            margin: 0 auto;
+            flex: 1;
+            background: #f8f9fa;
+            border-radius: 16px;
+            position: relative;
+            overflow: visible;
+            margin-bottom: 0.8rem;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05);
+            border: 2px solid rgba(0, 0, 0, 0.1);
+            min-height: 350px;
+            padding-bottom: 2rem;
+        }
+
+        .water-level {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: #64B5F6;
+            transition: height 0.5s ease, background-color 0.5s ease;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            height: 0; /* 初始高度为0 */
+        }
+
+        .water-marks {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 0.5rem;
+            color: #666;
+            font-size: 0.9rem;
+            pointer-events: none;
+        }
+
+        .water-mark {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            position: relative;
+            height: 0;
+            padding: 0.5rem 0;
+            margin-bottom: 0.5rem; /* 添加底部间距 */
+        }
+
+        .water-mark:last-child {
+            margin-bottom: 0; /* 最后一个标记不需要底部间距 */
+        }
+
+        .water-mark::before {
+            content: '';
+            width: 100%;
+            height: 1px;
+            background: rgba(0, 0, 0, 0.1);
+            position: absolute;
+            left: 0;
+        }
+
+        .water-mark span {
+            background: white;
+            padding: 0.3rem 0.6rem; /* 调整内边距 */
+            border-radius: 8px;
+            position: relative;
+            z-index: 1;
+            font-weight: 500;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            font-size: 0.85rem; /* 调整字体大小 */
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            white-space: nowrap; /* 防止文字换行 */
+            margin-left: 0.5rem; /* 添加左边距 */
+        }
+
+        .water-mark span::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #64B5F6;
+            flex-shrink: 0; /* 防止图标被压缩 */
+        }
+
+        .water-status {
+            text-align: center;
+            font-size: 1rem;
+            font-weight: 500;
+            margin: 0.5rem 0;
+            color: #2c3e50;
+            padding: 0.8rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+
+        .water-status .total {
+            font-size: 1.1rem;
+            color: #1976D2;
+            font-weight: 600;
+        }
+
+        .water-status .target {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .water-status .progress {
+            font-size: 0.9rem;
+            color: #4CAF50;
+            font-weight: 500;
+        }
+
+        /* 性能表单样式 */
+        .performance-input-form {
+            margin-top: 1rem;
+            padding: 1.5rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .performance-input-form .input-row {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .performance-input-form .input-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .performance-input-form .input-group label {
+            font-weight: 500;
+            color: #666;
+            text-align: center;
+        }
+
+        .performance-input-form .input-group input {
+            width: 200px;
+            padding: 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .performance-input-form .input-group input:focus {
+            border-color: #64B5F6;
+            box-shadow: 0 0 0 2px rgba(100, 181, 246, 0.2);
+            outline: none;
+        }
+
+        .performance-input-form .input-group input::placeholder {
+            color: #999;
+            font-size: 0.9rem;
+        }
+
+        .performance-input-form .submit-btn {
+            width: 200px;
+            margin: 0 auto;
+            display: block;
+            padding: 0.8rem;
+            background: #64B5F6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .performance-input-form .submit-btn:hover {
+            background: #1976D2;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(25, 118, 210, 0.2);
+        }
+
+        /* 卡片样式 */
+        .dash-card {
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            overflow: hidden;
+            background-color: #fff;
+        }
+
+        /* 代谢信息区域 */
+        .metabolism-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding: 0 10px;
+        }
+
+        .metabolism-box {
+            background-color: #f5f9ff;
+            border-radius: 8px;
+            padding: 15px;
+            width: 48%;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .metabolism-box h4 {
+            color: #3f51b5;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .metabolism-box p {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2196f3;
+            margin-bottom: 5px;
+        }
+
+        .metabolism-box small {
+            color: #757575;
+            font-size: 12px;
+        }
+
+        /* 针对热量监测图表的特定样式调整 */
+        #calorie-container .chart-scroll-container {
+            max-height: 400px;
+            overflow: hidden;
+        }
+        
+        #calorie-container .chart-inner-container {
+            width: 100% !important;
+            max-width: 100%;
+            height: auto;
+        }
+        
+        #calorieChart {
+            max-height: 350px !important;
+            height: 350px !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏋️♀️ 健康数据洞察</h1>
+        
+        <!-- 切换按钮 -->
+        <div class="chart-toggle">
+            <button class="toggle-btn active" data-chart="performance">运动表现</button>
+            <button class="toggle-btn" data-chart="nutrition">营养摄入</button>
+            <button class="toggle-btn" data-chart="calorie">热量监测</button>
+        </div>
+        
+        <div class="dashboard-grid">
+            <!-- 运动表现图表 -->
+            <div class="chart-container active" id="performance-container">
+                <div class="chart-card">
+                    <h3>💪 运动表现记录</h3>
+                    <div class="chart-toggle" style="margin-bottom: 1rem;">
+                        <button class="toggle-btn active" data-subchart="strength">力量训练</button>
+                        <button class="toggle-btn" data-subchart="cardio">有氧训练</button>
+                    </div>
+                    <!-- 力量训练图表 -->
+                    <div class="performance-chart" id="strength-chart-container">
+                        <div class="chart-scroll-container">
+                            <div class="chart-inner-container">
+                                <canvas id="strengthChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-nav-buttons">
+                            <button class="chart-nav-btn" id="strength-prev" disabled>← 上一页</button>
+                            <button class="chart-nav-btn" id="strength-next" disabled>下一页 →</button>
+                        </div>
+                    </div>
+                    <!-- 有氧训练图表 -->
+                    <div class="performance-chart" id="cardio-chart-container" style="display: none;">
+                        <div class="chart-scroll-container">
+                            <div class="chart-inner-container">
+                                <canvas id="cardioChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-nav-buttons">
+                            <button class="chart-nav-btn" id="cardio-prev" disabled>← 上一页</button>
+                            <button class="chart-nav-btn" id="cardio-next" disabled>下一页 →</button>
+                        </div>
+                    </div>
+                    <!-- 力量训练输入表单 -->
+                    <div class="performance-input-form" id="strength-input-form">
+                        <div class="input-row">
+                            <div class="input-group">
+                                <label>深蹲 (kg)</label>
+                                <input type="number" id="squat-input" min="0" step="0.5" placeholder="请输入重量">
+                            </div>
+                            <div class="input-group">
+                                <label>卧推 (kg)</label>
+                                <input type="number" id="bench-input" min="0" step="0.5" placeholder="请输入重量">
+                            </div>
+                            <div class="input-group">
+                                <label>硬拉 (kg)</label>
+                                <input type="number" id="deadlift-input" min="0" step="0.5" placeholder="请输入重量">
+                            </div>
+                        </div>
+                        <button class="submit-btn" id="submit-strength">记录</button>
+                    </div>
+                    <!-- 有氧训练输入表单 -->
+                    <div class="performance-input-form" id="cardio-input-form" style="display: none;">
+                        <div class="input-row">
+                            <div class="input-group">
+                                <label>跑量 (km):</label>
+                                <input type="number" id="distance-input" min="0" step="0.1" placeholder="请输入跑量">
+                            </div>
+                            <div class="input-group">
+                                <label>配速 (min/km):</label>
+                                <input type="number" id="pace-input" min="0" step="0.1" placeholder="请输入配速">
+                            </div>
+                        </div>
+                        <button class="submit-btn" id="submit-cardio">记录</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 营养摄入图表 -->
+            <div class="chart-container" id="nutrition-container">
+                <div class="chart-card">
+                    <h3>🍎 营养素摄入分布</h3>
+                    <div class="nutrition-grid">
+                        <!-- 左侧饼图 -->
+                        <div class="nutrition-chart">
+                            <div class="nutrition-toggle">
+                                <button class="toggle-btn active" data-nutrition-type="amount">营养素摄入量</button>
+                                <button class="toggle-btn" data-nutrition-type="calorie">热量分布</button>
+                            </div>
+                            <canvas id="nutritionChart"></canvas>
+                        </div>
+                        <!-- 右侧饮水记录 -->
+                        <div class="water-chart">
+                            <div class="water-container">
+                                <div class="water-level" id="waterLevel"></div>
+                                <div class="water-marks">
+                                    <div class="water-mark"><span>优秀 (2L)</span></div>
+                                    <div class="water-mark"><span>良好 (1.5L)</span></div>
+                                    <div class="water-mark"><span>一般 (1L)</span></div>
+                                    <div class="water-mark"><span>不足 (500ml)</span></div>
+                                    <div class="water-mark"><span>严重不足 (0ml)</span></div>
+                                </div>
+                            </div>
+                            <div class="water-status" id="waterStatus">
+                                <div class="total">今日饮水量: 0ml</div>
+                                <div class="target">目标: 2000ml</div>
+                                <div class="progress">完成度: 0%</div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 输入表单容器 -->
+                    <div class="input-forms-container">
+                        <!-- 营养摄入输入表单 -->
+                        <div class="input-form nutrition-form">
+                            <h4>记录营养摄入</h4>
+                            <div class="nutrition-inputs">
+                                <div class="input-group">
+                                    <label>蛋白质 (g):</label>
+                                    <input type="number" id="protein-input" min="0" step="0.1">
+                                </div>
+                                <div class="input-group">
+                                    <label>碳水 (g):</label>
+                                    <input type="number" id="carbs-input" min="0" step="0.1">
+                                </div>
+                                <div class="input-group">
+                                    <label>脂肪 (g):</label>
+                                    <input type="number" id="fat-input" min="0" step="0.1">
+                                </div>
+                            </div>
+                            <button class="submit-btn" id="submit-nutrition">记录营养</button>
+                        </div>
+                        <!-- 饮水记录输入表单 -->
+                        <div class="input-form water-form">
+                            <h4>记录饮水量</h4>
+                            <div class="water-input-form">
+                                <div class="input-group">
+                                    <label>饮水量 (ml):</label>
+                                    <input type="number" id="water-input" min="0" step="50" placeholder="请输入饮水量">
+                                </div>
+                                <button class="submit-btn" id="submit-water">记录饮水</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 热量监测图表 -->
+            <div class="chart-container" id="calorie-container">
+                <div class="chart-card">
+                    <h3>🍽️ 每日热量摄入与基础代谢率</h3>
+                    <div class="metabolism-info">
+                        <div class="metabolism-box">
+                            <h4>基础代谢率 (BMR)</h4>
+                            <p id="bmr-value">--</p>
+                            <small>每日不活动情况下消耗的热量</small>
+                        </div>
+                        <div class="metabolism-box">
+                            <h4>每日总能量消耗 (TDEE)</h4>
+                            <p id="tdee-value">--</p>
+                            <small>基于您的活动水平计算</small>
+                        </div>
+                    </div>
+                    <div class="chart-scroll-container" style="max-height: 400px;">
+                        <div class="chart-inner-container">
+                            <canvas id="calorieChart" height="350"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-nav-buttons">
+                        <button class="chart-nav-btn" id="calorie-prev" disabled>← 上一页</button>
+                        <button class="chart-nav-btn" id="calorie-next" disabled>下一页 →</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 统一导航栏 -->
+    <nav class="nav-bar">
+        <a href="{% url 'plans:index' %}" class="nav-item">
+            <i class="fas fa-calendar-alt"></i>
+            <span>计划管理</span>
+        </a>
+        <a href="{% url 'nutrition:index' %}" class="nav-item active">
+            <i class="fas fa-heartbeat"></i>
+            <span>身体数据</span>
+        </a>
+        <a href="{% url 'coach:index' %}" class="nav-item">
+            <i class="fas fa-robot"></i>
+            <span>智能助手</span>
+        </a>
+        <a href="{% url 'settings:index' %}" class="nav-item">
+            <i class="fas fa-user-cog"></i>
+            <span>个人设置</span>
+        </a>
+    </nav>
+
+    <!-- 使用json_script过滤器安全地传递数据 -->
+    {{ strength_records|json_script:"strength-data" }}
+    {{ cardio_records|json_script:"cardio-data" }}
+    {{ nutrition_records|json_script:"nutrition-data" }}
+    {{ water_records|json_script:"water-data" }}
+    {{ calorie_data|json_script:"calorie-data" }}
+    {{ metabolism_data|json_script:"metabolism-data" }}
+
+    <script>
+        // 获取CSRF Token
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        const csrftoken = getCookie('csrftoken');
+
+        // 初始化数据
+        let strengthData = {
+            dates: [],
+            squat: [],
+            bench: [],
+            deadlift: []
+        };
+
+        let cardioData = {
+            dates: [],
+            distance: [],
+            pace: []
+        };
+
+        let nutritionData = {
+            protein: 0,
+            carbs: 0,
+            fat: 0,
+            calories: {
+                protein: 0,
+                carbs: 0,
+                fat: 0,
+                total: 0
+            }
+        };
+
+        let waterData = {
+            total: 0,
+            records: []
+        };
+        
+        let calorieData = {
+            dates: [],
+            values: [],
+            bmr_values: []
+        };
+
+        let metabolismData = {
+            bmr: 0,
+            tdee: 0
+        };
+
+        // 初始化图表变量和分页数据
+        let strengthChart;
+        let cardioChart;
+        let nutritionChart;
+        let calorieChart;
+        let strengthCurrentPage = 0;
+        let cardioCurrentPage = 0;
+        const itemsPerPage = 10;
+        const MAX_VISIBLE_POINTS = 10;
+
+        // 定义可见范围对象
+        const strengthVisibleRange = { start: 0, end: MAX_VISIBLE_POINTS };
+        const cardioVisibleRange = { start: 0, end: MAX_VISIBLE_POINTS };
+        const calorieVisibleRange = { start: 0, end: MAX_VISIBLE_POINTS };
+
+        // 页面加载时初始化数据
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化图表
+            initCharts();
+            // 加载最新数据
+            loadData();
+            // 初始化导航按钮事件
+            initChartNavigation();
+        });
+
+        // 初始化所有图表
+        function initCharts() {
+            // 创建渐变填充
+            const createGradientFill = (ctx, colorStart, colorEnd) => {
+                const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+                gradient.addColorStop(0, colorStart);
+                gradient.addColorStop(1, colorEnd);
+                return gradient;
+            };
+            
+            // 获取有氧训练图表的上下文
+            const cardioCtx = document.getElementById('cardioChart').getContext('2d');
+            const distanceGradient = createGradientFill(cardioCtx, 'rgba(255, 112, 67, 0.4)', 'rgba(255, 112, 67, 0.02)');
+            
+            // 初始化力量训练图表
+            strengthChart = new Chart(document.getElementById('strengthChart'), {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: '深蹲',
+                            data: [],
+                            borderColor: '#FF7043',
+                            backgroundColor: 'rgba(255, 112, 67, 0.1)',
+                            tension: 0.4
+                        },
+                        {
+                            label: '卧推',
+                            data: [],
+                            borderColor: '#42A5F5',
+                            backgroundColor: 'rgba(66, 165, 245, 0.1)',
+                            tension: 0.4
+                        },
+                        {
+                            label: '硬拉',
+                            data: [],
+                            borderColor: '#66BB6A',
+                            backgroundColor: 'rgba(102, 187, 106, 0.1)',
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '力量训练记录',
+                            font: {
+                                size: 18,
+                                weight: 'bold'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '重量 (kg)'
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 初始化有氧训练图表
+            cardioChart = new Chart(document.getElementById('cardioChart'), {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: '跑量',
+                            data: [],
+                            borderColor: '#FF7043',
+                            backgroundColor: distanceGradient,
+                            tension: 0.4,
+                            yAxisID: 'y',
+                            fill: true,
+                            borderWidth: 2,
+                            pointBackgroundColor: '#FF7043',
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        },
+                        {
+                            label: '配速',
+                            data: [],
+                            borderColor: '#42A5F5',
+                            backgroundColor: 'rgba(66, 165, 245, 0.1)',
+                            tension: 0.4,
+                            yAxisID: 'y1',
+                            borderWidth: 2,
+                            fill: false,
+                            pointBackgroundColor: '#42A5F5',
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '有氧训练记录',
+                            font: {
+                                size: 18,
+                                weight: 'bold'
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        },
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 15
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: '跑量 (km)'
+                            },
+                            grid: {
+                                drawOnChartArea: true,
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: '配速 (min/km)'
+                            },
+                            grid: {
+                                drawOnChartArea: false
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 初始化营养摄入图表
+            nutritionChart = new Chart(document.getElementById('nutritionChart'), {
+                type: 'pie',
+                data: {
+                    labels: ['蛋白质', '碳水化合物', '脂肪'],
+                    datasets: [{
+                        data: [0, 0, 0],
+                        backgroundColor: [
+                            'rgba(255, 112, 67, 0.7)',
+                            'rgba(66, 165, 245, 0.7)',
+                            'rgba(102, 187, 106, 0.7)'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '营养素摄入分布 (g)',
+                            font: {
+                                size: 18,
+                                weight: 'bold'
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.raw || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = Math.round((value / total) * 100);
+                                    return `${label}: ${value}${context.dataset.label === 'amount' ? 'g' : 'kcal'} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 初始化热量监测图表
+            calorieChart = new Chart(document.getElementById('calorieChart'), {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: '热量摄入',
+                            data: [],
+                            borderColor: 'rgb(255, 87, 34)',
+                            backgroundColor: 'rgba(255, 87, 34, 0.1)',
+                            tension: 0.4,
+                            fill: true,
+                            pointBackgroundColor: 'rgb(255, 87, 34)',
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        },
+                        {
+                            label: '基础代谢率',
+                            data: [],
+                            borderColor: 'rgb(33, 150, 243)',
+                            backgroundColor: 'rgba(33, 150, 243, 0.0)',
+                            tension: 0.4,
+                            fill: false,
+                            pointBackgroundColor: 'rgb(33, 150, 243)',
+                            pointRadius: 3,
+                            pointHoverRadius: 5,
+                            borderDash: [5, 5]
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: 2,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '每日热量摄入与基础代谢率',
+                            font: {
+                                size: 18,
+                                weight: 'bold'
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.dataset.label || '';
+                                    const value = context.raw || 0;
+                                    return `${label}: ${value} kcal`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '热量 (kcal)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 加载数据函数
+        function loadData() {
+            // 使用json_script过滤器安全地传递数据
+            strengthData = JSON.parse(document.getElementById('strength-data').textContent);
+            cardioData = JSON.parse(document.getElementById('cardio-data').textContent);
+            nutritionData = JSON.parse(document.getElementById('nutrition-data').textContent);
+            waterData = JSON.parse(document.getElementById('water-data').textContent);
+            calorieData = JSON.parse(document.getElementById('calorie-data').textContent);
+            metabolismData = JSON.parse(document.getElementById('metabolism-data').textContent);
+            
+            // 重置分页状态
+            strengthCurrentPage = 0;
+            cardioCurrentPage = 0;
+            strengthVisibleRange.start = 0;
+            strengthVisibleRange.end = MAX_VISIBLE_POINTS;
+            cardioVisibleRange.start = 0;
+            cardioVisibleRange.end = MAX_VISIBLE_POINTS;
+
+            // 计算卡路里
+            nutritionData.calories = calculateCalories(nutritionData);
+            
+            // 更新图表
+            updateCharts();
+            
+            // 显示代谢数据
+            displayMetabolismData();
+        }
+
+        // 卡路里计算常量
+        const CALORIE_CONSTANTS = {
+            PROTEIN: 4,  // 蛋白质 4卡/克
+            CARBS: 4,    // 碳水化合物 4卡/克
+            FAT: 9       // 脂肪 9卡/克
+        };
+
+        // 计算卡路里
+        function calculateCalories(nutritionData) {
+            const calories = {
+                protein: nutritionData.protein * CALORIE_CONSTANTS.PROTEIN,
+                carbs: nutritionData.carbs * CALORIE_CONSTANTS.CARBS,
+                fat: nutritionData.fat * CALORIE_CONSTANTS.FAT
+            };
+            calories.total = calories.protein + calories.carbs + calories.fat;
+            return calories;
+        }
+
+        // 更新营养图表
+        function updateNutritionChart(type = 'amount') {
+            if (!nutritionChart) return;
+
+            const labels = ['蛋白质', '碳水化合物', '脂肪'];
+            let data;
+            let title;
+
+            if (type === 'amount') {
+                data = [
+                    nutritionData.protein || 0,
+                    nutritionData.carbs || 0,
+                    nutritionData.fat || 0
+                ];
+                title = '营养素摄入分布 (g)';
+            } else {
+                data = [
+                    nutritionData.calories.protein || 0,
+                    nutritionData.calories.carbs || 0,
+                    nutritionData.calories.fat || 0
+                ];
+                title = '热量分布 (kcal)';
+            }
+
+            nutritionChart.data.labels = labels;
+            nutritionChart.data.datasets[0].data = data;
+            nutritionChart.options.plugins.title.text = title;
+            nutritionChart.update();
+        }
+
+        // 提交力量训练数据
+        document.getElementById('submit-strength').addEventListener('click', async function() {
+            const squat = parseFloat(document.getElementById('squat-input').value);
+            const bench = parseFloat(document.getElementById('bench-input').value);
+            const deadlift = parseFloat(document.getElementById('deadlift-input').value);
+
+            if (isNaN(squat) || isNaN(bench) || isNaN(deadlift)) {
+                alert('请输入有效的数值');
+                return;
+            }
+
+            try {
+                const response = await fetch('{% url "nutrition:record_strength" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': csrftoken
+                    },
+                    body: new URLSearchParams({
+                        'squat': squat,
+                        'bench_press': bench,
+                        'deadlift': deadlift
+                    })
+                });
+
+                const data = await response.json();
+                if (data.status === 'success') {
+                    // 更新数据
+                    strengthData.dates.push(data.data.date);
+                    strengthData.squat.push(data.data.squat);
+                    strengthData.bench.push(data.data.bench_press);
+                    strengthData.deadlift.push(data.data.deadlift);
+
+                    // 更新图表
+                    strengthChart.data.labels = strengthData.dates;
+                    strengthChart.data.datasets[0].data = strengthData.squat;
+                    strengthChart.data.datasets[1].data = strengthData.bench;
+                    strengthChart.data.datasets[2].data = strengthData.deadlift;
+                    strengthChart.update();
+
+                    // 清空输入框
+                    document.getElementById('squat-input').value = '';
+                    document.getElementById('bench-input').value = '';
+                    document.getElementById('deadlift-input').value = '';
+
+                    alert('记录已保存！');
+                } else {
+                    alert('保存失败：' + data.message);
+                }
+            } catch (error) {
+                alert('保存失败：' + error.message);
+            }
+        });
+
+        // 提交有氧训练数据
+        document.getElementById('submit-cardio').addEventListener('click', async function() {
+            const distance = parseFloat(document.getElementById('distance-input').value);
+            const pace = parseFloat(document.getElementById('pace-input').value);
+
+            if (isNaN(distance) || isNaN(pace)) {
+                alert('请输入有效的数值');
+                return;
+            }
+
+            try {
+                const response = await fetch('{% url "nutrition:record_cardio" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': csrftoken
+                    },
+                    body: new URLSearchParams({
+                        'distance': distance,
+                        'pace': pace
+                    })
+                });
+
+                const data = await response.json();
+                if (data.status === 'success') {
+                    // 更新数据
+                    cardioData.dates.push(data.data.date);
+                    cardioData.distance.push(data.data.distance);
+                    cardioData.pace.push(data.data.pace);
+
+                    // 重置分页状态
+                    cardioVisibleRange.start = 0;
+                    cardioVisibleRange.end = MAX_VISIBLE_POINTS;
+
+                    // 更新图表
+                    updateCharts();
+
+                    // 清空输入框
+                    document.getElementById('distance-input').value = '';
+                    document.getElementById('pace-input').value = '';
+
+                    alert('记录已保存！');
+                } else {
+                    alert('保存失败：' + data.message);
+                }
+            } catch (error) {
+                alert('保存失败：' + error.message);
+            }
+        });
+
+        // 提交营养摄入数据
+        document.getElementById('submit-nutrition').addEventListener('click', async function() {
+            const protein = parseFloat(document.getElementById('protein-input').value);
+            const carbs = parseFloat(document.getElementById('carbs-input').value);
+            const fat = parseFloat(document.getElementById('fat-input').value);
+
+            if (isNaN(protein) || isNaN(carbs) || isNaN(fat)) {
+                alert('请输入有效的数值');
+                return;
+            }
+
+            try {
+                const response = await fetch('{% url "nutrition:record_nutrition" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': csrftoken
+                    },
+                    body: new URLSearchParams({
+                        'protein': protein,
+                        'carbs': carbs,
+                        'fat': fat
+                    })
+                });
+
+                const data = await response.json();
+                if (data.status === 'success') {
+                    // 更新数据
+                    nutritionData.protein = data.data.protein;
+                    nutritionData.carbs = data.data.carbs;
+                    nutritionData.fat = data.data.fat;
+                    
+                    // 计算卡路里
+                    nutritionData.calories = calculateCalories(nutritionData);
+
+                    // 更新图表
+                    updateNutritionChart(document.querySelector('.nutrition-toggle .toggle-btn.active').dataset.nutritionType);
+
+                    // 清空输入框
+                    document.getElementById('protein-input').value = '';
+                    document.getElementById('carbs-input').value = '';
+                    document.getElementById('fat-input').value = '';
+
+                    alert('记录已保存！');
+                } else {
+                    alert('保存失败：' + data.message);
+                }
+            } catch (error) {
+                alert('保存失败：' + error.message);
+            }
+        });
+
+        // 提交饮水记录
+        document.getElementById('submit-water').addEventListener('click', async function() {
+            const water = parseInt(document.getElementById('water-input').value);
+
+            if (isNaN(water) || water <= 0) {
+                alert('请输入有效的饮水量');
+                return;
+            }
+
+            try {
+                const response = await fetch('{% url "nutrition:record_water" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': csrftoken
+                    },
+                    body: new URLSearchParams({
+                        'amount': water
+                    })
+                });
+
+                const data = await response.json();
+                if (data.status === 'success') {
+                    // 更新数据
+                    waterData.total = data.data.total;
+                    waterData.records.push({
+                        time: data.data.date,
+                        amount: data.data.amount
+                    });
+
+                    // 更新显示
+                    updateWaterDisplay(waterData.total);
+
+                    // 清空输入框
+                    document.getElementById('water-input').value = '';
+
+                    alert('记录已保存！');
+                } else {
+                    alert('保存失败：' + data.message);
+                }
+            } catch (error) {
+                alert('保存失败：' + error.message);
+            }
+        });
+
+        // 主切换功能
+        document.querySelectorAll('.chart-toggle .toggle-btn').forEach(button => {
+            if (!button.dataset.subchart) {  // 只处理主切换按钮
+                button.addEventListener('click', () => {
+                    // 更新按钮状态
+                    document.querySelectorAll('.chart-toggle .toggle-btn').forEach(btn => {
+                        if (!btn.dataset.subchart) {  // 只更新主切换按钮
+                            btn.classList.remove('active');
+                        }
+                    });
+                    button.classList.add('active');
+                    
+                    // 更新图表显示
+                    const chartType = button.dataset.chart;
+                    document.querySelectorAll('.chart-container').forEach(container => {
+                        container.classList.remove('active');
+                    });
+                    document.getElementById(`${chartType}-container`).classList.add('active');
+                    
+                    // 如果切换到热量图表，确保更新图表
+                    if (chartType === 'calorie') {
+                        updateCharts();
+                    }
+                });
+            }
+        });
+
+        // 运动表现子切换功能
+        document.querySelectorAll('[data-subchart]').forEach(button => {
+            button.addEventListener('click', () => {
+                // 更新按钮状态
+                document.querySelectorAll('[data-subchart]').forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                
+                // 更新图表和表单显示
+                const subchartType = button.dataset.subchart;
+                const strengthChartContainer = document.getElementById('strength-chart-container');
+                const cardioChartContainer = document.getElementById('cardio-chart-container');
+                const strengthForm = document.getElementById('strength-input-form');
+                const cardioForm = document.getElementById('cardio-input-form');
+                
+                if (subchartType === 'strength') {
+                    strengthChartContainer.style.display = 'flex';
+                    cardioChartContainer.style.display = 'none';
+                    strengthForm.style.display = 'block';
+                    cardioForm.style.display = 'none';
+                    
+                    // 重置力量训练图表的分页状态
+                    strengthVisibleRange.start = 0;
+                    strengthVisibleRange.end = MAX_VISIBLE_POINTS;
+                } else {
+                    strengthChartContainer.style.display = 'none';
+                    cardioChartContainer.style.display = 'flex';
+                    strengthForm.style.display = 'none';
+                    cardioForm.style.display = 'block';
+                    
+                    // 重置有氧训练图表的分页状态
+                    cardioVisibleRange.start = 0;
+                    cardioVisibleRange.end = MAX_VISIBLE_POINTS;
+                }
+                
+                // 更新图表显示
+                updateCharts();
+            });
+        });
+
+        // 更新图表可见范围
+        function updateChartVisibleRange(chart, data, range) {
+            if (!data || data.length === 0) {
+                return false;
+            }
+
+            // 如果数据点少于或等于最大可见点数，显示所有数据
+            if (data.length <= MAX_VISIBLE_POINTS) {
+                range.start = 0;
+                range.end = data.length;
+                return false;
+            }
+            
+            // 确保范围有效
+            if (range.start < 0) range.start = 0;
+            if (range.end > data.length) range.end = data.length;
+            if (range.end - range.start > MAX_VISIBLE_POINTS) {
+                range.end = range.start + MAX_VISIBLE_POINTS;
+            }
+            
+            return true;
+        }
+        
+        // 更新导航按钮状态
+        function updateNavButtons(prevBtn, nextBtn, range, dataLength) {
+            if (!prevBtn || !nextBtn) return;
+            
+            prevBtn.disabled = range.start <= 0;
+            nextBtn.disabled = range.end >= dataLength;
+            
+            // 显示或隐藏按钮
+            prevBtn.style.display = dataLength > MAX_VISIBLE_POINTS ? 'block' : 'none';
+            nextBtn.style.display = dataLength > MAX_VISIBLE_POINTS ? 'block' : 'none';
+        }
+        
+        // 更新所有图表
+        function updateCharts() {
+            // 更新力量训练图表
+            if (strengthChart && strengthData) {
+                const needsNav = updateChartVisibleRange(strengthChart, strengthData.dates, strengthVisibleRange);
+                
+                // 更新数据集
+                strengthChart.data.labels = strengthData.dates.slice(strengthVisibleRange.start, strengthVisibleRange.end);
+                strengthChart.data.datasets[0].data = strengthData.squat.slice(strengthVisibleRange.start, strengthVisibleRange.end);
+                strengthChart.data.datasets[1].data = strengthData.bench.slice(strengthVisibleRange.start, strengthVisibleRange.end);
+                strengthChart.data.datasets[2].data = strengthData.deadlift.slice(strengthVisibleRange.start, strengthVisibleRange.end);
+                
+                // 更新导航按钮
+                updateNavButtons(
+                    document.getElementById('strength-prev'),
+                    document.getElementById('strength-next'),
+                    strengthVisibleRange,
+                    strengthData.dates.length
+                );
+                
+                strengthChart.update();
+            }
+
+            // 更新有氧训练图表
+            if (cardioChart && cardioData) {
+                const needsNav = updateChartVisibleRange(cardioChart, cardioData.dates, cardioVisibleRange);
+                
+                // 更新数据集
+                cardioChart.data.labels = cardioData.dates.slice(cardioVisibleRange.start, cardioVisibleRange.end);
+                cardioChart.data.datasets[0].data = cardioData.distance.slice(cardioVisibleRange.start, cardioVisibleRange.end);
+                cardioChart.data.datasets[1].data = cardioData.pace.slice(cardioVisibleRange.start, cardioVisibleRange.end);
+                
+                // 更新导航按钮
+                updateNavButtons(
+                    document.getElementById('cardio-prev'),
+                    document.getElementById('cardio-next'),
+                    cardioVisibleRange,
+                    cardioData.dates.length
+                );
+                
+                // 设置动画持续时间
+                cardioChart.options.animation = {
+                    duration: 800,
+                    easing: 'easeOutQuart'
+                };
+                
+                cardioChart.update();
+            }
+
+            // 更新营养摄入图表
+            if (nutritionChart && nutritionData) {
+                updateNutritionChart(document.querySelector('.nutrition-toggle .toggle-btn.active').dataset.nutritionType);
+            }
+            
+            // 更新热量监测图表
+            if (calorieChart && calorieData && calorieData.dates) {
+                const needsNav = updateChartVisibleRange(calorieChart, calorieData.dates, calorieVisibleRange);
+                
+                // 更新数据集
+                calorieChart.data.labels = calorieData.dates.slice(calorieVisibleRange.start, calorieVisibleRange.end);
+                calorieChart.data.datasets[0].data = calorieData.values.slice(calorieVisibleRange.start, calorieVisibleRange.end);
+                calorieChart.data.datasets[1].data = calorieData.bmr_values.slice(calorieVisibleRange.start, calorieVisibleRange.end);
+                
+                // 确保图表尺寸保持一致
+                calorieChart.options.maintainAspectRatio = true;
+                calorieChart.options.aspectRatio = 2;
+                
+                // 更新导航按钮
+                updateNavButtons(
+                    document.getElementById('calorie-prev'),
+                    document.getElementById('calorie-next'),
+                    calorieVisibleRange,
+                    calorieData.dates.length
+                );
+                
+                calorieChart.update();
+            }
+
+            // 更新饮水显示
+            if (waterData) {
+                updateWaterDisplay(waterData.total || 0);
+            }
+            
+            // 显示代谢数据
+            displayMetabolismData();
+        }
+        
+        // 初始化图表导航按钮
+        function initChartNavigation() {
+            // 力量训练图表导航
+            document.getElementById('strength-prev').addEventListener('click', function() {
+                if (strengthVisibleRange.start <= 0) return;
+                
+                // 向前移动一页
+                const moveAmount = Math.min(MAX_VISIBLE_POINTS, strengthVisibleRange.start);
+                strengthVisibleRange.start -= moveAmount;
+                strengthVisibleRange.end -= moveAmount;
+                
+                // 更新图表
+                updateCharts();
+            });
+            
+            document.getElementById('strength-next').addEventListener('click', function() {
+                if (strengthVisibleRange.end >= strengthData.dates.length) return;
+                
+                // 向后移动一页
+                const moveAmount = Math.min(MAX_VISIBLE_POINTS, strengthData.dates.length - strengthVisibleRange.end);
+                strengthVisibleRange.start += moveAmount;
+                strengthVisibleRange.end += moveAmount;
+                
+                // 更新图表
+                updateCharts();
+            });
+            
+            // 有氧训练图表导航
+            document.getElementById('cardio-prev').addEventListener('click', function() {
+                if (cardioVisibleRange.start <= 0) return;
+                
+                // 向前移动一页
+                const moveAmount = Math.min(MAX_VISIBLE_POINTS, cardioVisibleRange.start);
+                cardioVisibleRange.start -= moveAmount;
+                cardioVisibleRange.end -= moveAmount;
+                
+                // 更新图表
+                updateCharts();
+            });
+            
+            document.getElementById('cardio-next').addEventListener('click', function() {
+                if (cardioVisibleRange.end >= cardioData.dates.length) return;
+                
+                // 向后移动一页
+                const moveAmount = Math.min(MAX_VISIBLE_POINTS, cardioData.dates.length - cardioVisibleRange.end);
+                cardioVisibleRange.start += moveAmount;
+                cardioVisibleRange.end += moveAmount;
+                
+                // 更新图表
+                updateCharts();
+            });
+            
+            // 热量监测图表导航
+            document.getElementById('calorie-prev').addEventListener('click', function() {
+                if (calorieVisibleRange.start <= 0) return;
+                
+                // 向前移动一页
+                const moveAmount = Math.min(MAX_VISIBLE_POINTS, calorieVisibleRange.start);
+                calorieVisibleRange.start -= moveAmount;
+                calorieVisibleRange.end -= moveAmount;
+                
+                // 更新图表
+                updateCharts();
+            });
+            
+            document.getElementById('calorie-next').addEventListener('click', function() {
+                if (calorieVisibleRange.end >= calorieData.dates.length) return;
+                
+                // 向后移动一页
+                const moveAmount = Math.min(MAX_VISIBLE_POINTS, calorieData.dates.length - calorieVisibleRange.end);
+                calorieVisibleRange.start += moveAmount;
+                calorieVisibleRange.end += moveAmount;
+                
+                // 更新图表
+                updateCharts();
+            });
+        }
+
+        // 单独的函数用于更新热量监测图表中的BMR数据
+        function updateCalorieChartBMR() {
+            if (!calorieChart) return;
+            
+            // 确保BMR数据存在于图表中
+            if (calorieChart.data.datasets.length >= 2) {
+                calorieChart.data.datasets[1].data = calorieData.bmr_values.slice(calorieVisibleRange.start, calorieVisibleRange.end);
+                calorieChart.update();
+            }
+        }
+
+        // 单独更新力量训练图表
+        function updateStrengthChart() {
+            if (strengthChart && strengthData) {
+                const needsNav = updateChartVisibleRange(strengthChart, strengthData.dates, strengthVisibleRange);
+                
+                // 更新数据集
+                strengthChart.data.labels = strengthData.dates.slice(strengthVisibleRange.start, strengthVisibleRange.end);
+                strengthChart.data.datasets[0].data = strengthData.squat.slice(strengthVisibleRange.start, strengthVisibleRange.end);
+                strengthChart.data.datasets[1].data = strengthData.bench.slice(strengthVisibleRange.start, strengthVisibleRange.end);
+                strengthChart.data.datasets[2].data = strengthData.deadlift.slice(strengthVisibleRange.start, strengthVisibleRange.end);
+                
+                // 更新导航按钮
+                updateNavButtons(
+                    document.getElementById('strength-prev'),
+                    document.getElementById('strength-next'),
+                    strengthVisibleRange,
+                    strengthData.dates.length
+                );
+                
+                strengthChart.update();
+            }
+        }
+
+        // 单独更新有氧训练图表
+        function updateCardioChart() {
+            if (cardioChart && cardioData) {
+                const needsNav = updateChartVisibleRange(cardioChart, cardioData.dates, cardioVisibleRange);
+                
+                // 更新数据集
+                cardioChart.data.labels = cardioData.dates.slice(cardioVisibleRange.start, cardioVisibleRange.end);
+                cardioChart.data.datasets[0].data = cardioData.distance.slice(cardioVisibleRange.start, cardioVisibleRange.end);
+                cardioChart.data.datasets[1].data = cardioData.pace.slice(cardioVisibleRange.start, cardioVisibleRange.end);
+                
+                // 更新导航按钮
+                updateNavButtons(
+                    document.getElementById('cardio-prev'),
+                    document.getElementById('cardio-next'),
+                    cardioVisibleRange,
+                    cardioData.dates.length
+                );
+                
+                // 设置动画持续时间
+                cardioChart.options.animation = {
+                    duration: 800,
+                    easing: 'easeOutQuart'
+                };
+                
+                cardioChart.update();
+            }
+        }
+
+        // 单独更新水量图表
+        function updateWaterChart() {
+            if (waterData) {
+                updateWaterDisplay(waterData.total || 0);
+            }
+        }
+
+        // 显示代谢数据
+        function displayMetabolismData() {
+            const bmrElement = document.getElementById('bmr-value');
+            const tdeeElement = document.getElementById('tdee-value');
+            
+            if (bmrElement && metabolismData.bmr) {
+                bmrElement.textContent = `${metabolismData.bmr} kcal`;
+            }
+            
+            if (tdeeElement && metabolismData.tdee) {
+                tdeeElement.textContent = `${metabolismData.tdee} kcal`;
+            }
+        }
+
+        // 更新饮水显示
+        function updateWaterDisplay(amount) {
+            const waterLevel = document.getElementById('waterLevel');
+            const waterStatus = document.getElementById('waterStatus');
+            const maxHeight = 350; // 更新容器高度
+            const maxWater = 2000; // 最大饮水量（2L）
+            
+            // 计算水位高度
+            const height = Math.min((amount / maxWater) * maxHeight, maxHeight);
+            waterLevel.style.height = `${height}px`;
+            
+            // 根据饮水量设置颜色
+            let color, status;
+            if (amount >= 2000) {
+                color = '#4CAF50'; // 绿色
+                status = '优秀';
+            } else if (amount >= 1500) {
+                color = '#8BC34A'; // 浅绿色
+                status = '良好';
+            } else if (amount >= 1000) {
+                color = '#FFC107'; // 黄色
+                status = '一般';
+            } else if (amount >= 500) {
+                color = '#FF9800'; // 橙色
+                status = '不足';
+            } else {
+                color = '#F44336'; // 红色
+                status = '严重不足';
+            }
+            
+            waterLevel.style.backgroundColor = color;
+            waterStatus.innerHTML = `
+                <div class="total">${amount}ml</div>
+                <div class="target">目标: 2000ml</div>
+                <div class="progress">完成度: ${Math.round((amount / maxWater) * 100)}%</div>
+            `;
+        }
+
+        // 添加营养素切换按钮事件监听
+        document.querySelectorAll('.nutrition-toggle .toggle-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                // 更新按钮状态
+                document.querySelectorAll('.nutrition-toggle .toggle-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                button.classList.add('active');
+                
+                // 更新图表显示
+                updateNutritionChart(button.dataset.nutritionType);
+            });
+        });
+    </script>
+</body>
+</html>

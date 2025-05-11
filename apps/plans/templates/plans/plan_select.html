@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>计划管理中心</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #6B8DD6;
+            --secondary-color: #8E37D7;
+            --accent-color: #4CAF50;
+            --background: #f8f9ff;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--background);
+            margin: 0;
+            padding: 0 0 80px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .plan-selection {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .plan-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .plan-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+
+        .plan-card.active-plan {
+            border: 2px solid var(--primary-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .plan-card.active-plan::after {
+            content: "当前选择";
+            position: absolute;
+            top: 10px;
+            right: -30px;
+            background: var(--accent-color);
+            color: white;
+            padding: 4px 30px;
+            transform: rotate(45deg);
+            font-size: 12px;
+        }
+
+        .plan-card i {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+        }
+
+        .program-grid {
+            display: none;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        .program-grid.active-plan {
+            opacity: 1;
+        }
+
+        .program-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 16px;
+            position: relative;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .program-card h3 {
+            margin: 0 0 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .badge {
+            background: rgba(107, 141, 214, 0.1);
+            color: var(--primary-color);
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        .custom-plan {
+            grid-column: 1 / -1;
+            width: calc(100% - 3rem);
+            margin: 1rem 0;
+            border: 2px dashed var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            flex-direction: row;
+            min-height: 160px;
+            color: var(--primary-color);
+            padding: 2rem;
+            text-decoration: none;
+        }
+
+        .custom-plan i {
+            margin-right: 2rem;
+            font-size: 3rem;
+        }
+
+        .select-btn {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            padding: 8px 24px;
+            border-radius: 20px;
+            margin-top: 1rem;
+            cursor: pointer;
+            transition: transform 0.2s;
+            display: inline-block;
+            text-decoration: none;
+            text-align: center;
+        }
+
+        .select-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(107, 141, 214, 0.3);
+        }
+
+        .nav-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 12px 0;
+            display: flex;
+            justify-content: space-around;
+            box-shadow: 0 -4px 12px rgba(0,0,0,0.05);
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #666;
+            padding: 8px 16px;
+            border-radius: 12px;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+
+        .nav-item.active {
+            color: var(--primary-color);
+            background: rgba(107, 141, 214, 0.1);
+        }
+
+        .nav-item i {
+            font-size: 1.4rem;
+            margin-bottom: 4px;
+        }
+
+        @media (max-width: 768px) {
+            .custom-plan {
+                flex-direction: column;
+                text-align: center;
+                padding: 1.5rem;
+            }
+            .custom-plan i {
+                margin-right: 0;
+                margin-bottom: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><i class="fas fa-dumbbell"></i> 训练计划管理</h1>
+        
+        <div class="plan-selection">
+            <div class="plan-card" onclick="showPrograms('strength')">
+                <i class="fas fa-weight-hanging"></i>
+                <h3>力量训练</h3>
+                <p>提升绝对力量与肌肉量</p>
+            </div>
+
+            <div class="plan-card" onclick="showPrograms('cardio')">
+                <i class="fas fa-running"></i>
+                <h3>有氧训练</h3>
+                <p>增强心肺功能与耐力</p>
+            </div>
+
+            <div class="plan-card" onclick="showPrograms('functional')">
+                <i class="fas fa-people-carry"></i>
+                <h3>功能性训练</h3>
+                <p>提高运动表现与协调性</p>
+            </div>
+        </div>
+
+        <!-- 力量训练计划 -->
+        <div id="strength-programs" class="program-grid">
+            <div class="program-card">
+                <h3><i class="fas fa-fire"></i> 德州训练法</h3>
+                <div class="badge">中级 · 12周周期</div>
+                <p>🔸 每周3次高强度训练<br>
+                🔸 5×5核心训练模式<br>
+                🔸 渐进式负荷增加</p>
+                <a href="{% url 'plans:input_rm' %}" class="select-btn">选择计划</a>
+            </div>
+
+            <div class="program-card">
+                <h3><i class="fas fa-chart-line"></i> 5×5训练法</h3>
+                <div class="badge">新手友好 · 8周周期</div>
+                <p>🔸 基础复合动作为主<br>
+                🔸 每周3次全身训练<br>
+                🔸 线性进步模式</p>
+                <button class="select-btn">选择计划</button>
+            </div>
+
+            <div class="program-card">
+                <h3><i class="fas fa-project-diagram"></i> GZCLP计划</h3>
+                <div class="badge">进阶 · 动态周期</div>
+                <p>🔸 多层级训练结构<br>
+                🔸 自动调节训练量<br>
+                🔸 个性化进阶方案</p>
+                <button class="select-btn">选择计划</button>
+            </div>
+
+            <a href="计划自定义页面.html" class="program-card custom-plan">
+                <i class="fas fa-plus-circle fa-2x"></i>
+                <div>
+                    <h3>创建自定义计划</h3>
+                    <p>设计个性化训练方案</p>
+                </div>
+            </a>
+        </div>
+
+        <!-- 有氧训练计划 -->
+        <div id="cardio-programs" class="program-grid">
+            <div class="program-card">
+                <h3><i class="fas fa-tractor"></i> LISS耐力构建计划</h3>
+                <div class="badge">基础 · 8周周期</div>
+                <p>🔸 低强度稳态有氧训练<br>
+                🔸 每周4次45分钟训练<br>
+                🔸 心率区间控制</p>
+                <button class="select-btn">选择计划</button>
+            </div>
+
+            <div class="program-card">
+                <h3><i class="fas fa-chart-area"></i> 法特莱克变速训练</h3>
+                <div class="badge">进阶 · 6周周期</div>
+                <p>🔸 速度游戏训练法<br>
+                🔸 间歇性强度变化<br>
+                🔸 提升最大摄氧量</p>
+                <button class="select-btn">选择计划</button>
+            </div>
+
+            <div class="program-card">
+                <h3><i class="fas fa-bolt"></i> Tabata代谢冲击计划</h3>
+                <div class="badge">高阶 · 4周冲刺</div>
+                <p>🔸 20秒全力+10秒休息<br>
+                🔸 每周3次HIIT训练<br>
+                🔸 提升后燃效应</p>
+                <button class="select-btn">选择计划</button>
+            </div>
+
+            <a href="create-plan.html?type=cardio" class="program-card custom-plan">
+                <i class="fas fa-plus-circle fa-2x"></i>
+                <div>
+                    <h3>创建自定义计划</h3>
+                    <p>设计个性化训练方案</p>
+                </div>
+            </a>
+        </div>
+
+        <!-- 功能性训练计划 -->
+        <div id="functional-programs" class="program-grid">
+            <a href="create-plan.html?type=functional" class="program-card custom-plan">
+                <i class="fas fa-plus-circle fa-2x"></i>
+                <div>
+                    <h3>创建自定义计划</h3>
+                    <p>设计个性化训练方案</p>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <nav class="nav-bar">
+        <a href="{% url 'plans:index' %}" class="nav-item active">
+            <i class="fas fa-calendar-alt"></i>
+            <span>计划管理</span>
+        </a>
+        <a href="{% url 'nutrition:index' %}" class="nav-item">
+            <i class="fas fa-heartbeat"></i>
+            <span>身体数据</span>
+        </a>
+        <a href="{% url 'coach:index' %}" class="nav-item">
+            <i class="fas fa-robot"></i>
+            <span>智能助手</span>
+        </a>
+        <a href="{% url 'settings:index' %}" class="nav-item">
+            <i class="fas fa-user-cog"></i>
+            <span>个人设置</span>
+        </a>
+    </nav>
+
+    <script>
+        function showPrograms(type) {
+            document.querySelectorAll('.program-grid').forEach(el => {
+                el.style.display = 'none';
+                el.classList.remove('active-plan');
+            });
+            
+            document.querySelectorAll('.plan-card').forEach(card => {
+                card.classList.remove('active-plan');
+            });
+
+            const target = document.getElementById(`${type}-programs`);
+            if (target) {
+                target.style.display = 'grid';
+                setTimeout(() => {
+                    target.classList.add('active-plan');
+                    target.style.opacity = 1;
+                }, 50);
+            }
+
+            event.currentTarget.classList.add('active-plan');
+        }
+
+        showPrograms('strength');
+    </script>
+</body>
+</html>

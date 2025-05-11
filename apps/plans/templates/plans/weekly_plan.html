@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>德州训练法 - 每周计划</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #6B8DD6;
+            --secondary-color: #8E37D7;
+            --accent-color: #4CAF50;
+            --background: #f8f9ff;
+            --text-color: #333;
+            --card-background: white;
+            --border-color: #e0e0e0;
+            --light-gray: #f0f2f5;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--background);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0 0 100px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .page-header h1 {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--primary-color);
+            margin: 0;
+            font-size: 1.8rem;
+        }
+
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: background-color 0.3s;
+        }
+
+        .back-button:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .plan-section {
+            background: var(--card-background);
+            padding: 1.5rem 2rem;
+            border-radius: 16px;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .plan-section h2 {
+            margin-top: 0;
+            color: var(--primary-color);
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .plan-section p {
+            line-height: 1.6;
+            margin-bottom: 0.5rem;
+        }
+
+        .weeks-viewport {
+            margin-top: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .weeks-container {
+            display: flex;
+            transition: transform 0.3s ease;
+            width: 100%;
+        }
+
+        .week-block {
+            background: var(--card-background);
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            overflow: hidden;
+            width: calc(50% - 0.5rem);
+            flex: 0 0 auto;
+            box-sizing: border-box;
+            margin-right: 1rem;
+        }
+
+        .week-nav {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .week-nav-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .week-nav-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .week-block.completed {
+            display: none;
+        }
+
+        .week-header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .week-header h3 {
+            margin: 0;
+            font-size: 1.4rem;
+        }
+        
+        .week-content {
+            padding: 1.5rem;
+        }
+
+        .day-card {
+            background-color: var(--light-gray);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .day-card:last-child {
+            margin-bottom: 0;
+        }
+
+        .day-card h4 {
+            font-size: 1.3rem;
+            color: var(--secondary-color);
+            margin-top: 0;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .day-card h4 .day-label {
+            background-color: rgba(142, 55, 215, 0.1);
+            color: var(--secondary-color);
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .exercise-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .exercise-list li {
+            padding: 0.75rem 0;
+            border-bottom: 1px dashed #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .exercise-list li:last-child {
+            border-bottom: none;
+        }
+
+        .exercise-name {
+            font-weight: 600;
+            flex-basis: 50%;
+        }
+        
+        .exercise-details {
+            font-size: 0.9rem;
+            color: #555;
+            text-align: right;
+            flex-basis: 50%;
+        }
+
+        .week-footer {
+            padding: 1rem 1.5rem;
+            background-color: var(--light-gray);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .completion-options {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .completion-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+
+        .basic-complete {
+            background-color: #f0f0f0;
+            color: #333;
+        }
+
+        .easy-complete {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        .intensity-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 16px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .nav-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 12px 0;
+            display: flex;
+            justify-content: space-around;
+            box-shadow: 0 -4px 12px rgba(0,0,0,0.05);
+            z-index: 1000;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #666;
+            padding: 8px 16px;
+            border-radius: 12px;
+            transition: all 0.2s;
+            text-decoration: none;
+            font-size: 0.8rem;
+        }
+
+        .nav-item.active {
+            color: var(--primary-color);
+            background: rgba(107, 141, 214, 0.1);
+        }
+
+        .nav-item i {
+            font-size: 1.4rem;
+            margin-bottom: 4px;
+        }
+
+        @media (max-width: 768px) {
+            .page-header h1 {
+                font-size: 1.5rem;
+            }
+            .plan-section, .week-content, .week-footer {
+                padding: 1rem;
+            }
+            .exercise-name, .exercise-details {
+                flex-basis: 100%;
+                text-align: left;
+            }
+            .exercise-details {
+                margin-top: 0.2rem;
+            }
+             .week-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+            .week-block {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="page-header">
+            <h1><i class="fas fa-fire"></i> 德州训练法</h1>
+            <a href="{% url 'plans:input_rm' %}" class="back-button"><i class="fas fa-arrow-left"></i> 返回</a>
+        </div>
+
+        <section class="plan-section">
+            <h2><i class="fas fa-info-circle"></i> 计划简介</h2>
+            <p>德州训练法是一个经典的周循环力量提升计划，适合已完成新手期、寻求通过系统性调整训练量与强度来持续进步的训练者。核心在于每周通过"训练量日"、"恢复日"和"强度日"的组合，冲击新的力量高峰。</p>
+            <p>本页面将为您展示多周计划安排。请在完成每一周的训练后，勾选"本周已完成"，然后您可以选择为下一周的训练"加强度"，通常这意味着增加您在周五强度日的目标5RM（5次重复最大重量）。</p>
+        </section>
+
+        <div class="weeks-viewport">
+            <div class="weeks-container" id="weeksContainer">
+                <!-- 每周计划将通过JavaScript动态生成 -->
+            </div>
+        </div>
+        <div class="week-nav">
+            <button class="week-nav-btn" id="prevWeeksBtn" disabled><i class="fas fa-chevron-left"></i> 前两周</button>
+            <button class="week-nav-btn" id="nextWeeksBtn"><i class="fas fa-chevron-right"></i> 后两周</button>
+        </div>
+    </div>
+
+    <nav class="nav-bar">
+        <a href="{% url 'plans:index' %}" class="nav-item active">
+            <i class="fas fa-calendar-alt"></i>
+            <span>计划管理</span>
+        </a>
+        <a href="{% url 'nutrition:index' %}" class="nav-item">
+            <i class="fas fa-heartbeat"></i>
+            <span>身体数据</span>
+        </a>
+        <a href="{% url 'coach:index' %}" class="nav-item">
+            <i class="fas fa-robot"></i>
+            <span>智能助手</span>
+        </a>
+        <a href="{% url 'settings:index' %}" class="nav-item">
+            <i class="fas fa-user-cog"></i>
+            <span>个人设置</span>
+        </a>
+    </nav>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 从localStorage获取RM值
+            const squat5RM = localStorage.getItem('squat5RM');
+            const bench5RM = localStorage.getItem('bench5RM');
+            const ohp5RM = localStorage.getItem('ohp5RM');
+            const deadlift5RM = localStorage.getItem('deadlift5RM');
+
+            if (!squat5RM || !bench5RM || !ohp5RM || !deadlift5RM) {
+                alert('未找到初始5RM数据，请先输入您的5RM值');
+                window.location.href = "{% url 'plans:input_rm' %}";
+                return;
+            }
+
+            // 生成每周计划
+            generateWeeklyPlans(squat5RM, bench5RM, ohp5RM, deadlift5RM);
+
+            // 设置完成状态和强度增加按钮的交互
+            setupWeekInteractions();
+        });
+
+        function generateWeeklyPlans(squat5RM, bench5RM, ohp5RM, deadlift5RM) {
+            const weeksContainer = document.getElementById('weeksContainer');
+            
+            // 生成4周的示例计划
+            for (let week = 1; week <= 4; week++) {
+                const weekBlock = document.createElement('div');
+                weekBlock.className = 'week-block';
+                weekBlock.id = `week-${week}`;
+
+                const squatTarget = parseFloat(squat5RM) + (week-1)*2.5;
+                const benchTarget = parseFloat(bench5RM) + (week-1)*2.5;
+                const ohpTarget = parseFloat(ohp5RM) + (week-1)*1.25;
+                const deadliftTarget = parseFloat(deadlift5RM) + (week-1)*2.5;
+
+                weekBlock.innerHTML = `
+                    <div class="week-header">
+                        <h3>第${week}周</h3>
+                    </div>
+                    <div class="week-content">
+                        <div class="day-card">
+                            <h4><i class="fas fa-cubes"></i> 周一: 训练量日 <span class="day-label">高量</span></h4>
+                            <ul class="exercise-list">
+                                <li><span class="exercise-name">深蹲</span> <span class="exercise-details">5组 x 5次 @ ${(squatTarget*0.9).toFixed(1)} kg</span></li>
+                                <li><span class="exercise-name">卧推/推举 (选择其一)</span> <span class="exercise-details">5组 x 5次 @ ${(benchTarget*0.9).toFixed(1)} kg / ${(ohpTarget*0.9).toFixed(1)} kg</span></li>
+                                <li><span class="exercise-name">硬拉</span> <span class="exercise-details">1组 x 5次 @ ${(deadliftTarget*0.9).toFixed(1)} kg</span></li>
+                                <li><span class="exercise-name">辅助: 杠铃划船</span> <span class="exercise-details">3组 x 8-12次 (可选)</span></li>
+                            </ul>
+                        </div>
+                        <div class="day-card">
+                            <h4><i class="fas fa-leaf"></i> 周三: 恢复日 <span class="day-label">轻量</span></h4>
+                            <ul class="exercise-list">
+                                <li><span class="exercise-name">深蹲</span> <span class="exercise-details">2组 x 5次 @ ${(squatTarget*0.9*0.8).toFixed(1)} kg</span></li>
+                                <li><span class="exercise-name">推举/卧推 (周一未选的)</span> <span class="exercise-details">3组 x 5次 @ 较轻负荷</span></li>
+                                <li><span class="exercise-name">引体向上</span> <span class="exercise-details">3组 x 力竭</span></li>
+                                <li><span class="exercise-name">背部伸展</span> <span class="exercise-details">3组 x 10-15次 (可选)</span></li>
+                            </ul>
+                        </div>
+                        <div class="day-card">
+                            <h4><i class="fas fa-bolt"></i> 周五: 强度日 <span class="day-label">高强</span></h4>
+                            <ul class="exercise-list">
+                                <li><span class="exercise-name">深蹲</span> <span class="exercise-details">热身后，尝试新的 1组 x 5RM (目标: ${squatTarget} kg)</span></li>
+                                <li><span class="exercise-name">卧推/推举 (同周一)</span> <span class="exercise-details">热身后，尝试新的 1组 x 5RM (目标: ${benchTarget} kg / ${ohpTarget} kg)</span></li>
+                                <li><span class="exercise-name">实力翻/高翻</span> <span class="exercise-details">5组 x 3次 / 6组 x 2次</span></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="week-footer">
+                        <div class="completion-options">
+                            <button class="completion-btn basic-complete" data-week-id="${week}">基本完成</button>
+                            <button class="completion-btn easy-complete" data-week-id="${week}">轻松完成</button>
+                        </div>
+                    </div>
+                `;
+
+                weeksContainer.appendChild(weekBlock);
+            }
+
+            // 添加强度调整弹窗
+            const modal = document.createElement('div');
+            modal.className = 'intensity-modal';
+            modal.id = 'intensityModal';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <h3><i class="fas fa-chart-line"></i> 调整下周训练强度</h3>
+                    <p>您已轻松完成本周训练，建议为下周增加训练强度：</p>
+                    <ul>
+                        <li>深蹲 +2.5kg</li>
+                        <li>卧推 +2.5kg</li>
+                        <li>推举 +1.25kg</li>
+                        <li>硬拉 +2.5kg</li>
+                    </ul>
+                    <div class="modal-actions">
+                        <button id="cancelIncreaseBtn" class="week-nav-btn" style="background-color: #f0f0f0; color: #333;">取消</button>
+                        <button id="confirmIncreaseBtn" class="week-nav-btn">确认增加</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        let currentWeekIndex = 0;
+        const WEEKS_PER_PAGE = 2;
+
+        function setupWeekInteractions() {
+            // 设置周导航按钮
+            const prevBtn = document.getElementById('prevWeeksBtn');
+            const nextBtn = document.getElementById('nextWeeksBtn');
+            const weeksContainer = document.getElementById('weeksContainer');
+            
+            prevBtn.addEventListener('click', () => {
+                currentWeekIndex = Math.max(0, currentWeekIndex - WEEKS_PER_PAGE);
+                updateWeekView();
+            });
+            
+            nextBtn.addEventListener('click', () => {
+                const weekBlocks = document.querySelectorAll('.week-block');
+                currentWeekIndex = Math.min(weekBlocks.length - WEEKS_PER_PAGE, currentWeekIndex + WEEKS_PER_PAGE);
+                updateWeekView();
+            });
+
+            function updateWeekView() {
+                const containerWidth = weeksContainer.parentElement.offsetWidth;
+                weeksContainer.style.transform = `translateX(-${currentWeekIndex * (containerWidth / WEEKS_PER_PAGE)}px)`;
+                
+                prevBtn.disabled = currentWeekIndex === 0;
+                nextBtn.disabled = currentWeekIndex >= document.querySelectorAll('.week-block').length - WEEKS_PER_PAGE;
+            }
+            // 设置完成按钮交互
+            const basicCompleteBtns = document.querySelectorAll('.basic-complete');
+            const easyCompleteBtns = document.querySelectorAll('.easy-complete');
+            const modal = document.getElementById('intensityModal');
+            let currentWeekId = 0;
+
+            basicCompleteBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const weekId = this.dataset.weekId;
+                    const weekBlock = document.getElementById('week-' + weekId);
+                    weekBlock.classList.add('completed');
+                    this.disabled = true;
+                    document.querySelector(`.easy-complete[data-week-id="${weekId}"]`).disabled = true;
+                });
+            });
+
+            easyCompleteBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    currentWeekId = this.dataset.weekId;
+                    const weekBlock = document.getElementById('week-' + currentWeekId);
+                    weekBlock.classList.add('completed');
+                    this.disabled = true;
+                    document.querySelector(`.basic-complete[data-week-id="${currentWeekId}"]`).disabled = true;
+                    
+                    // 直接增加强度
+                    const squat5RM = parseFloat(localStorage.getItem('squat5RM'));
+                    const bench5RM = parseFloat(localStorage.getItem('bench5RM'));
+                    const ohp5RM = parseFloat(localStorage.getItem('ohp5RM'));
+                    const deadlift5RM = parseFloat(localStorage.getItem('deadlift5RM'));
+                    
+                    localStorage.setItem('squat5RM', squat5RM + 2.5);
+                    localStorage.setItem('bench5RM', bench5RM + 2.5);
+                    localStorage.setItem('ohp5RM', ohp5RM + 1.25);
+                    localStorage.setItem('deadlift5RM', deadlift5RM + 2.5);
+                    
+                    alert(`已为第 ${parseInt(currentWeekId) + 1} 周自动增加了训练强度！`);
+                });
+            });
+
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,201 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}登录 - E-Coach{% endblock %}
+
+{% block content %}
+<style>
+    .login-container {
+        min-height: 100vh;
+        padding: 30px 0;
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    }
+    .login-card {
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+        background: white;
+    }
+    .login-header {
+        background: linear-gradient(135deg, #4b6cb7 0%, #6a11cb 100%);
+        color: white;
+        padding: 20px;
+        text-align: center;
+    }
+    .login-body {
+        padding: 30px;
+    }
+    .form-floating {
+        margin-bottom: 20px;
+    }
+    .form-floating label {
+        color: #495057;
+    }
+    .login-btn {
+        background: linear-gradient(135deg, #4b6cb7 0%, #6a11cb 100%);
+        border: none;
+        width: 100%;
+        padding: 12px;
+        border-radius: 8px;
+        color: white;
+        font-weight: 500;
+        margin-top: 10px;
+        transition: all 0.3s;
+    }
+    .login-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(107, 17, 203, 0.3);
+    }
+    .register-link {
+        display: block;
+        text-align: center;
+        margin-top: 20px;
+        color: #6c757d;
+    }
+    .register-link a {
+        color: #4b6cb7;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    .register-link a:hover {
+        text-decoration: underline;
+    }
+    .form-control.is-invalid {
+        border-color: #dc3545;
+        padding-right: calc(1.5em + .75rem);
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right calc(.375em + .1875rem) center;
+        background-size: calc(.75em + .375rem) calc(.75em + .375rem);
+    }
+    .error-feedback {
+        width: 100%;
+        margin-top: .25rem;
+        font-size: .875em;
+        color: #dc3545;
+    }
+    .alert {
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    .custom-checkbox {
+        display: block;
+        position: relative;
+        padding-left: 30px;
+        margin-bottom: 15px;
+        cursor: pointer;
+        user-select: none;
+    }
+    .custom-checkbox input {
+        position: absolute;
+        opacity: 0;
+        cursor: pointer;
+        height: 0;
+        width: 0;
+    }
+    .checkmark {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 20px;
+        width: 20px;
+        background-color: #eee;
+        border-radius: 4px;
+        transition: all 0.2s;
+    }
+    .custom-checkbox:hover input ~ .checkmark {
+        background-color: #ccc;
+    }
+    .custom-checkbox input:checked ~ .checkmark {
+        background-color: #4b6cb7;
+    }
+    .checkmark:after {
+        content: "";
+        position: absolute;
+        display: none;
+    }
+    .custom-checkbox input:checked ~ .checkmark:after {
+        display: block;
+    }
+    .custom-checkbox .checkmark:after {
+        left: 7px;
+        top: 3px;
+        width: 6px;
+        height: 12px;
+        border: solid white;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+    }
+</style>
+
+<div class="login-container">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-5">
+                <div class="login-card">
+                    <div class="login-header">
+                        <h3 class="mb-0">欢迎回来</h3>
+                        <p class="mb-0">登录您的 E-Coach 账号</p>
+                    </div>
+                    <div class="login-body">
+                        {% if messages %}
+                            {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                            {% endfor %}
+                        {% endif %}
+                        
+                        <form method="post">
+                            {% csrf_token %}
+                            
+                            <!-- 用户名 -->
+                            <div class="form-floating">
+                                <input type="text" 
+                                       class="form-control {% if form.username.errors %}is-invalid{% endif %}" 
+                                       id="{{ form.username.id_for_label }}" 
+                                       name="{{ form.username.html_name }}" 
+                                       placeholder="{{ form.username.label }}"
+                                       required>
+                                <label for="{{ form.username.id_for_label }}">{{ form.username.label }}</label>
+                                {% if form.username.errors %}
+                                    <div class="error-feedback">{{ form.username.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- 密码 -->
+                            <div class="form-floating">
+                                <input type="password" 
+                                       class="form-control {% if form.password.errors %}is-invalid{% endif %}" 
+                                       id="{{ form.password.id_for_label }}" 
+                                       name="{{ form.password.html_name }}" 
+                                       placeholder="{{ form.password.label }}"
+                                       required>
+                                <label for="{{ form.password.id_for_label }}">{{ form.password.label }}</label>
+                                {% if form.password.errors %}
+                                    <div class="error-feedback">{{ form.password.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- 记住我 -->
+                            <div class="mb-3">
+                                <label class="custom-checkbox">
+                                    记住我
+                                    <input type="checkbox" name="remember_me" id="remember_me">
+                                    <span class="checkmark"></span>
+                                </label>
+                            </div>
+                            
+                            <button type="submit" class="login-btn">登录</button>
+                        </form>
+                        
+                        <div class="register-link">
+                            还没有账号？<a href="{% url 'accounts:register' %}">立即注册</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

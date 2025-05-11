@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人设置</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #6B8DD6;
+            --secondary-color: #8E37D7;
+            --accent-color: #4CAF50;
+            --background: #f8f9ff;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--background);
+            margin: 0;
+            padding: 0 0 80px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .settings-card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .pro-card {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pro-card::after {
+            content: "PRO";
+            position: absolute;
+            right: -30px;
+            top: -30px;
+            font-size: 4rem;
+            opacity: 0.1;
+            transform: rotate(45deg);
+        }
+
+        .settings-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            border-radius: 12px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .settings-item:hover {
+            background: rgba(0,0,0,0.03);
+        }
+
+        .icon-wrapper {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: rgba(107, 141, 214, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+        }
+
+        .switch {
+            position: relative;
+            width: 48px;
+            height: 24px;
+            margin-left: auto;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #ddd;
+            border-radius: 24px;
+            transition: .4s;
+        }
+
+        .slider:before {
+            content: "";
+            position: absolute;
+            height: 20px;
+            width: 20px;
+            left: 2px;
+            bottom: 2px;
+            background: white;
+            border-radius: 50%;
+            transition: .4s;
+        }
+
+        input:checked + .slider {
+            background: var(--accent-color);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+
+        /* 统一导航栏样式 */
+        .nav-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 12px 0;
+            display: flex;
+            justify-content: space-around;
+            box-shadow: 0 -4px 12px rgba(0,0,0,0.05);
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #666;
+            padding: 8px 16px;
+            border-radius: 12px;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+
+        .nav-item.active {
+            color: var(--primary-color);
+            background: rgba(107, 141, 214, 0.1);
+        }
+
+        .nav-item i {
+            font-size: 1.4rem;
+            margin-bottom: 4px;
+        }
+
+        .badge {
+            background: #FFD700;
+            color: #2c3e50;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin-left: 8px;
+        }
+
+        /* 设置下拉菜单的统一样式 */
+        .settings-select {
+            margin-left: auto;
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            background-color: white;
+            min-width: 220px; /* 设置最小宽度确保所有选项显示完整 */
+            font-size: 14px;
+            color: #444;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .settings-select:hover, .settings-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(107, 141, 214, 0.1);
+            outline: none;
+        }
+
+        /* 模态框样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            overflow: auto;
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 20px;
+            border-radius: 16px;
+            width: 80%;
+            max-width: 500px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            position: relative;
+            animation: modalFadeIn 0.3s;
+        }
+        
+        @keyframes modalFadeIn {
+            from {opacity: 0; transform: translateY(-20px);}
+            to {opacity: 1; transform: translateY(0);}
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .modal-header h3 {
+            margin: 0;
+            color: #333;
+        }
+        
+        .close-btn {
+            font-size: 24px;
+            font-weight: bold;
+            color: #aaa;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+        }
+        
+        .close-btn:hover {
+            color: #333;
+        }
+        
+        .modal-body {
+            margin-bottom: 20px;
+        }
+        
+        .option-item {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            padding: 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .option-item:hover {
+            background-color: #f5f9ff;
+        }
+        
+        .option-item.selected {
+            background-color: #e3f2fd;
+            border: 1px solid #90caf9;
+        }
+        
+        .option-item input[type="radio"] {
+            margin-right: 15px;
+            width: 18px;
+            height: 18px;
+            accent-color: var(--primary-color);
+        }
+        
+        .option-label {
+            flex: 1;
+        }
+        
+        .option-item strong {
+            display: block;
+            margin-bottom: 3px;
+        }
+        
+        .option-item p {
+            margin: 0;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+        
+        .modal-btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .cancel-btn {
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        
+        .save-btn {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .save-btn:hover {
+            background-color: #5272b1;
+            transform: translateY(-2px);
+            box-shadow: 0 2px 8px rgba(107, 141, 214, 0.3);
+        }
+        
+        .cancel-btn:hover {
+            background-color: #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><i class="fas fa-user-cog"></i> 个人设置</h1>
+        
+        <div class="settings-grid">
+            <!-- 账号设置 -->
+            <div class="settings-card">
+                <h2><i class="fas fa-user-shield"></i> 账号管理</h2>
+                <div class="settings-item">
+                    <div class="icon-wrapper">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div>
+                        <strong>个人信息</strong>
+                        <p>修改头像、昵称等资料</p>
+                    </div>
+                    <i class="fas fa-chevron-right" style="margin-left: auto; color: #999"></i>
+                </div>
+
+                <div class="settings-item">
+                    <div class="icon-wrapper">
+                        <i class="fas fa-lock"></i>
+                    </div>
+                    <div>
+                        <strong>安全设置</strong>
+                        <p>修改密码、两步验证</p>
+                    </div>
+                    <i class="fas fa-chevron-right" style="margin-left: auto; color: #999"></i>
+                </div>
+
+                <div class="settings-item">
+                    <div class="icon-wrapper">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    <div>
+                        <strong>通知偏好</strong>
+                        <p>管理消息通知方式</p>
+                    </div>
+                    <i class="fas fa-chevron-right" style="margin-left: auto; color: #999"></i>
+                </div>
+
+                <div class="settings-item">
+                    <div class="icon-wrapper">
+                        <i class="fas fa-bullseye"></i>
+                    </div>
+                    <div>
+                        <strong>训练目标</strong>
+                        <p>设置您的训练目标</p>
+                    </div>
+                    <i class="fas fa-chevron-right" style="margin-left: auto; color: #999"></i>
+                </div>
+
+                <div class="settings-item">
+                    <div class="icon-wrapper">
+                        <i class="fas fa-running"></i>
+                    </div>
+                    <div>
+                        <strong>活动水平</strong>
+                        <p>影响基础代谢率计算</p>
+                    </div>
+                    <i class="fas fa-chevron-right" style="margin-left: auto; color: #999"></i>
+                </div>
+            </div>
+
+            <!-- Pro订阅 -->
+            <div class="settings-card pro-card">
+                <h2><i class="fas fa-gem"></i> Pro 会员</h2>
+                <div style="margin: 1.5rem 0">
+                    <p>当前状态：<span class="badge">免费版</span></p>
+                    <div style="margin: 1rem 0">
+                        <p>✔️ 高级训练分析<br>
+                        ✔️ 专属课程内容<br>
+                        ✔️ 无广告体验<br>
+                        ✔️ 优先客服支持</p>
+                    </div>
+                    <button style="width:100%;background:white;color:var(--primary-color);border:none;padding:12px;border-radius:8px;font-weight:bold">
+                        升级到 Pro 版 - ¥29/月
+                    </button>
+                </div>
+            </div>
+
+            <!-- 其他设置 -->
+            <div class="settings-card">
+                <h2><i class="fas fa-cog"></i> 系统设置</h2>
+                <div class="settings-item">
+                    <div class="icon-wrapper">
+                        <i class="fas fa-moon"></i>
+                    </div>
+                    <div>
+                        <strong>深色模式</strong>
+                        <p>切换界面显示模式</p>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="settings-item">
+                    <div class="icon-wrapper">
+                        <i class="fas fa-database"></i>
+                    </div>
+                    <div>
+                        <strong>数据管理</strong>
+                        <p>导出训练数据记录</p>
+                    </div>
+                    <i class="fas fa-chevron-right" style="margin-left: auto; color: #999"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 训练目标模态框 -->
+    <div id="training-goal-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>选择训练目标</h3>
+                <button class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="option-item {% if user.profile.training_goal == 'WL' %}selected{% endif %}">
+                    <input type="radio" name="training-goal" value="WL" id="goal-wl" {% if user.profile.training_goal == 'WL' %}checked{% endif %}>
+                    <div class="option-label">
+                        <strong>减重</strong>
+                        <p>专注于减少体重和体脂率</p>
+                    </div>
+                </div>
+                <div class="option-item {% if user.profile.training_goal == 'MG' %}selected{% endif %}">
+                    <input type="radio" name="training-goal" value="MG" id="goal-mg" {% if user.profile.training_goal == 'MG' %}checked{% endif %}>
+                    <div class="option-label">
+                        <strong>增肌</strong>
+                        <p>专注于增加肌肉量和力量</p>
+                    </div>
+                </div>
+                <div class="option-item {% if user.profile.training_goal == 'ST' %}selected{% endif %}">
+                    <input type="radio" name="training-goal" value="ST" id="goal-st" {% if user.profile.training_goal == 'ST' %}checked{% endif %}>
+                    <div class="option-label">
+                        <strong>力量训练</strong>
+                        <p>专注于提高整体力量和肌肉质量</p>
+                    </div>
+                </div>
+                <div class="option-item {% if user.profile.training_goal == 'EN' %}selected{% endif %}">
+                    <input type="radio" name="training-goal" value="EN" id="goal-en" {% if user.profile.training_goal == 'EN' %}checked{% endif %}>
+                    <div class="option-label">
+                        <strong>耐力训练</strong>
+                        <p>专注于提高心肺功能和耐力</p>
+                    </div>
+                </div>
+                <div class="option-item {% if user.profile.training_goal == 'MN' %}selected{% endif %}">
+                    <input type="radio" name="training-goal" value="MN" id="goal-mn" {% if user.profile.training_goal == 'MN' %}checked{% endif %}>
+                    <div class="option-label">
+                        <strong>保持健康</strong>
+                        <p>维持当前体能水平和身体健康</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn cancel-btn">取消</button>
+                <button class="modal-btn save-btn" id="save-training-goal">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 活动水平模态框 -->
+    <div id="activity-level-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>选择活动水平</h3>
+                <button class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="option-item {% if user.profile.activity_level == 'S' %}selected{% endif %}">
+                    <input type="radio" name="activity-level" value="S" id="level-s" {% if user.profile.activity_level == 'S' %}checked{% endif %}>
+                    <div class="option-label">
+                        <strong>久坐（几乎不运动）</strong>
+                        <p>每天主要进行基本活动，如走路、站立，很少或没有有意识的运动</p>
+                    </div>
+                </div>
+                <div class="option-item {% if user.profile.activity_level == 'L' %}selected{% endif %}">
+                    <input type="radio" name="activity-level" value="L" id="level-l" {% if user.profile.activity_level == 'L' %}checked{% endif %}>
+                    <div class="option-label">
+                        <strong>轻度活动（每周运动1-3次）</strong>
+                        <p>每周进行1-3次轻度到中度强度的运动或活动</p>
+                    </div>
+                </div>
+                <div class="option-item {% if user.profile.activity_level == 'M' %}selected{% endif %}">
+                    <input type="radio" name="activity-level" value="M" id="level-m" {% if user.profile.activity_level == 'M' %}checked{% endif %}>
+                    <div class="option-label">
+                        <strong>中度活动（每周运动3-5次）</strong>
+                        <p>每周进行3-5次中度强度的运动或活动</p>
+                    </div>
+                </div>
+                <div class="option-item {% if user.profile.activity_level == 'H' %}selected{% endif %}">
+                    <input type="radio" name="activity-level" value="H" id="level-h" {% if user.profile.activity_level == 'H' %}checked{% endif %}>
+                    <div class="option-label">
+                        <strong>高度活动（每周运动6-7次）</strong>
+                        <p>每周进行6-7次中到高强度的运动或体力活动</p>
+                    </div>
+                </div>
+                <div class="option-item {% if user.profile.activity_level == 'E' %}selected{% endif %}">
+                    <input type="radio" name="activity-level" value="E" id="level-e" {% if user.profile.activity_level == 'E' %}checked{% endif %}>
+                    <div class="option-label">
+                        <strong>专业运动员级别</strong>
+                        <p>每天进行多次高强度训练，体力消耗极高</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn cancel-btn">取消</button>
+                <button class="modal-btn save-btn" id="save-activity-level">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 统一导航栏 -->
+    <nav class="nav-bar">
+        <a href="{% url 'plans:index' %}" class="nav-item">
+            <i class="fas fa-calendar-alt"></i>
+            <span>计划管理</span>
+        </a>
+        <a href="{% url 'nutrition:index' %}" class="nav-item">
+            <i class="fas fa-heartbeat"></i>
+            <span>身体数据</span>
+        </a>
+        <a href="{% url 'coach:index' %}" class="nav-item">
+            <i class="fas fa-robot"></i>
+            <span>智能助手</span>
+        </a>
+        <a href="{% url 'settings:index' %}" class="nav-item active">
+            <i class="fas fa-user-cog"></i>
+            <span>个人设置</span>
+        </a>
+    </nav>
+    <script>
+        // 模态框相关函数
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = "block";
+            document.body.style.overflow = "hidden"; // 防止背景滚动
+        }
+        
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = "none";
+            document.body.style.overflow = "auto";
+        }
+        
+        // 关闭所有模态框的函数
+        function closeAllModals() {
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach(modal => {
+                modal.style.display = "none";
+            });
+            document.body.style.overflow = "auto";
+        }
+        
+        // 为训练目标项添加点击事件
+        document.querySelector('.settings-item:nth-of-type(4)').addEventListener('click', function() {
+            openModal('training-goal-modal');
+        });
+        
+        // 为活动水平项添加点击事件
+        document.querySelector('.settings-item:nth-of-type(5)').addEventListener('click', function() {
+            openModal('activity-level-modal');
+        });
+        
+        // 为所有关闭按钮添加事件
+        document.querySelectorAll('.close-btn, .cancel-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                closeAllModals();
+            });
+        });
+        
+        // 点击模态框外部关闭模态框
+        window.addEventListener('click', function(event) {
+            if (event.target.classList.contains('modal')) {
+                closeAllModals();
+            }
+        });
+        
+        // 为选项项添加点击事件，使点击整行时可以选择对应的单选按钮
+        document.querySelectorAll('.option-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const radio = this.querySelector('input[type="radio"]');
+                radio.checked = true;
+                
+                // 更新选中状态样式
+                const group = this.parentElement.querySelectorAll('.option-item');
+                group.forEach(el => el.classList.remove('selected'));
+                this.classList.add('selected');
+            });
+        });
+        
+        // 保存训练目标
+        document.getElementById('save-training-goal').addEventListener('click', async function() {
+            const selectedGoal = document.querySelector('input[name="training-goal"]:checked').value;
+            
+            try {
+                const response = await fetch('/settings/update_goal/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({ goal: selectedGoal })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        closeAllModals();
+                        alert('训练目标已更新！');
+                    } else {
+                        alert('更新失败：' + data.message);
+                    }
+                } else {
+                    alert('更新失败，请稍后重试');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('更新失败，请稍后重试');
+            }
+        });
+        
+        // 保存活动水平
+        document.getElementById('save-activity-level').addEventListener('click', async function() {
+            const selectedLevel = document.querySelector('input[name="activity-level"]:checked').value;
+            
+            try {
+                const response = await fetch('/settings/update_activity_level/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({ activity_level: selectedLevel })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        closeAllModals();
+                        alert('活动水平已更新！您的基础代谢率将据此重新计算。');
+                    } else {
+                        alert('更新失败：' + data.message);
+                    }
+                } else {
+                    alert('更新失败，请稍后重试');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('更新失败，请稍后重试');
+            }
+        });
+    </script>
+</body>
+</html>

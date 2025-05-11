@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}E-Coach{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: "Microsoft YaHei", "微软雅黑", sans-serif;
+        }
+        .auth-container {
+            max-width: 400px;
+            margin: 50px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        .form-control {
+            border-radius: 5px;
+            padding: 10px;
+            border: 1px solid #ced4da;
+        }
+        .form-text {
+            font-size: 0.875rem;
+            color: #6c757d;
+        }
+        .alert {
+            border-radius: 5px;
+            margin-bottom: 1rem;
+        }
+        .btn-primary {
+            background-color: #0d6efd;
+            border: none;
+            padding: 10px;
+            font-weight: 500;
+        }
+        .btn-primary:hover {
+            background-color: #0b5ed7;
+        }
+        .errorlist {
+            color: #dc3545;
+            list-style: none;
+            padding: 0;
+            margin: 5px 0;
+            font-size: 0.875rem;
+        }
+        label {
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+        
+        {% block content %}
+        {% endblock %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+{% block javascript %}
+<script>
+function checkPasswordStrength(password) {
+    let strength = 0;
+    
+    // 长度至少8个字符
+    if (password.length >= 8) strength += 1;
+    
+    // 包含小写字母
+    if (password.match(/[a-z]+/)) strength += 1;
+    
+    // 包含大写字母
+    if (password.match(/[A-Z]+/)) strength += 1;
+    
+    // 包含数字
+    if (password.match(/[0-9]+/)) strength += 1;
+    
+    // 包含特殊字符
+    if (password.match(/[$@#&!]+/)) strength += 1;
+    
+    // 更新进度条和文本
+    const bar = document.getElementById('password-strength-bar');
+    const text = document.getElementById('password-strength-text');
+    
+    if (strength === 0) {
+        bar.style.width = '0%';
+        bar.className = 'progress-bar bg-danger';
+        text.textContent = '密码强度: 非常弱';
+    } else if (strength <= 2) {
+        bar.style.width = '25%';
+        bar.className = 'progress-bar bg-warning';
+        text.textContent = '密码强度: 弱';
+    } else if (strength === 3) {
+        bar.style.width = '50%';
+        bar.className = 'progress-bar bg-info';
+        text.textContent = '密码强度: 中等';
+    } else if (strength === 4) {
+        bar.style.width = '75%';
+        bar.className = 'progress-bar bg-primary';
+        text.textContent = '密码强度: 强';
+    } else {
+        bar.style.width = '100%';
+        bar.className = 'progress-bar bg-success';
+        text.textContent = '密码强度: 非常强';
+    }
+}
+</script>
+{% endblock %}
+</body>
+</html>
