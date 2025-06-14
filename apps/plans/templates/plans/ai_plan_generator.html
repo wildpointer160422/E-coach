@@ -1,0 +1,301 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <h1><i class="fas fa-robot"></i> AI智能计划生成</h1>
+    
+    <div class="ai-chat-container">
+        <!-- 参数输入区 -->
+        <div class="param-section">
+            <h3>训练参数</h3>
+            <div class="param-grid">
+                <div>
+                    <label>训练目标</label>
+                    <select id="goal">
+                        <option value="增肌">增肌</option>
+                        <option value="减脂">减脂</option>
+                        <option value="力量提升">力量提升</option>
+                        <option value="体能增强">体能增强</option>
+                    </select>
+                </div>
+                <div>
+                    <label>每周训练天数</label>
+                    <input type="number" id="days" min="1" max="7" value="3">
+                </div>
+                <div>
+                    <label>可用器械</label>
+                    <select id="equipment" multiple>
+                        <option value="哑铃">哑铃</option>
+                        <option value="杠铃">杠铃</option>
+                        <option value="健身器械">健身器械</option>
+                        <option value="徒手">徒手训练</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 对话界面 -->
+        <div class="chat-box">
+            {% csrf_token %}
+            <div class="chat-messages" id="chat-messages">
+                <div class="message ai-message">
+                    您好！我是您的健身教练AI。请告诉我您的训练目标、偏好和可用器械，我将为您创建个性化训练计划。
+                </div>
+            </div>
+            
+            <div class="chat-input">
+                <input type="text" id="user-input" placeholder="输入您的训练需求...">
+                <button id="send-btn"><i class="fas fa-paper-plane"></i> 发送</button>
+                <button id="generate-plan-btn" class="primary-btn">生成计划</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .ai-chat-container {
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+    
+    .param-section {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 16px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    
+    .param-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .param-grid div {
+        margin-bottom: 1rem;
+    }
+    
+    label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+    }
+    
+    select, input {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+    }
+    
+    .chat-box {
+        background: white;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        display: flex;
+        flex-direction: column;
+        height: 600px;
+    }
+    
+    .chat-messages {
+        flex: 1;
+        padding: 1.5rem;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .message {
+        padding: 1rem;
+        border-radius: 12px;
+        max-width: 80%;
+    }
+    
+    .user-message {
+        background: #6B8DD6;
+        color: white;
+        align-self: flex-end;
+    }
+    
+    .ai-message {
+        background: #f0f4ff;
+        align-self: flex-start;
+    }
+    
+    .chat-input {
+        display: flex;
+        padding: 1rem;
+        border-top: 1px solid #eee;
+        gap: 0.5rem;
+    }
+    
+    #user-input {
+        flex: 1;
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: 20px;
+    }
+    
+    #send-btn, #generate-plan-btn {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 20px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    #send-btn {
+        background: #6B8DD6;
+        color: white;
+    }
+    
+    #generate-plan-btn {
+        background: #4CAF50;
+        color: white;
+    }
+    
+    button:hover {
+        opacity: 0.9;
+        transform: translateY(-2px);
+    }
+</style>
+
+<script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const chatMessages = document.getElementById('chat-messages');
+            const userInput = document.getElementById('user-input');
+            const sendBtn = document.getElementById('send-btn');
+            const generateBtn = document.getElementById('generate-plan-btn');
+            
+            function addMessage(text, isUser = false) {
+                const messageDiv = document.createElement('div');
+                messageDiv.classList.add('message');
+                messageDiv.classList.add(isUser ? 'user-message' : 'ai-message');
+                messageDiv.textContent = text;
+                chatMessages.appendChild(messageDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+
+            // 处理发送消息
+            function sendMessage() {
+                const message = userInput.value.trim();
+                if (message) {
+                    addMessage(message, true);
+                    userInput.value = '';
+                    
+                    // 模拟AI回复
+                    setTimeout(() => {
+                        addMessage("已记录您的需求。请点击\"生成计划\"按钮创建您的个性化训练计划。");
+                    }, 1000);
+                }
+            }
+
+            // 发送按钮点击事件
+            sendBtn.addEventListener('click', sendMessage);
+            
+            // 回车键发送消息
+            userInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+            // 生成计划按钮点击事件
+            generateBtn.addEventListener('click', function() {
+                const goal = document.getElementById('goal').value;
+                const days = document.getElementById('days').value;
+                const equipment = Array.from(
+                    document.getElementById('equipment').selectedOptions
+                ).map(option => option.value);
+                
+                // 构建提示消息
+                const message = `创建训练计划:
+- 目标: ${goal}
+- 每周训练天数: ${days}
+- 可用器械: ${equipment.join(', ')}`;
+                
+                addMessage("正在为您生成训练计划...", false);
+                
+                // 获取CSRF token
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+                if (!csrfToken) {
+                    addMessage("系统错误: 缺少CSRF令牌", false);
+                    console.error('CSRF token not found');
+                    return;
+                }
+
+                console.log('Sending request to:', "{% url 'plans:generate_plan' %}");
+                console.log('Request data:', {
+                    message: message,
+                    goal: goal,
+                    days: days,
+                    equipment: equipment
+                });
+
+                // 发送请求到后端
+                fetch("{% url 'plans:generate_plan' %}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        goal: goal,
+                        days: days,
+                        equipment: equipment
+                    })
+                })
+                .then(async response => {
+                    const responseText = await response.text();
+                    console.log('Raw response:', responseText);
+                    
+                    if (!response.ok) {
+                        try {
+                            const errData = JSON.parse(responseText);
+                            throw new Error(errData.error || '生成计划失败');
+                        } catch (e) {
+                            throw new Error(responseText || '生成计划失败');
+                        }
+                    }
+
+                    try {
+                        const data = JSON.parse(responseText);
+                        if (data.error) {
+                            throw new Error(data.error);
+                        }
+                        
+                        // 将计划数据存储在sessionStorage中以便下一页使用
+                        sessionStorage.setItem('generatedPlan', JSON.stringify(data));
+                        // 跳转到周计划页面
+                        window.location.href = "{% url 'plans:ai_weekly_plan' %}";
+                        return data;
+                    } catch (e) {
+                        console.error('JSON parse error:', e);
+                        throw new Error('服务器返回了无效的JSON数据');
+                    }
+                })
+                .catch(error => {
+                    console.error('Full error details:', {
+                        name: error.name,
+                        message: error.message,
+                        stack: error.stack
+                    });
+                    
+                    let errorMsg = '生成计划时出错';
+                    if (error.message.includes('Failed to fetch')) {
+                        errorMsg = '无法连接到服务器，请检查网络连接';
+                    } else if (error.message) {
+                        errorMsg += ': ' + error.message;
+                    }
+                    
+                    addMessage(errorMsg, false);
+                });
+            });
+        });
+    </script>
+{% endblock %}
