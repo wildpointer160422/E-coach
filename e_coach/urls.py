@@ -25,9 +25,9 @@ urlpatterns = [
     path('accounts/', include('accounts.urls')),
     path('plans/', include('plans.urls')),
     path('coach/', include('coach.urls')),
-
     path('settings/', include('settings.urls')),
     path('nutrition/', include('nutrition.urls')),
+    path('videos/', include('videos.urls')),  # 新增视频URLs
     path('', RedirectView.as_view(pattern_name='accounts:login'), name='home'),
 ]
 

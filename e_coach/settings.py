@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'nutrition.apps.NutritionConfig',
     'coach.apps.CoachConfig',
     'settings.apps.SettingsConfig',
+    'videos.apps.VideosConfig'
 ]
 
 MIDDLEWARE = [

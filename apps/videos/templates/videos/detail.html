@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ video.title }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #6B8DD6;
+            --secondary-color: #8E37D7;
+            --accent-color: #4CAF50;
+            --background: #f8f9ff;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--background);
+            margin: 0;
+            padding: 0 0 80px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--primary-color);
+            text-decoration: none;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .video-container {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+            margin-bottom: 30px;
+        }
+
+        .video-player {
+            width: 100%;
+            aspect-ratio: 16/9;
+            border: none;
+        }
+
+        .video-details {
+            padding: 20px;
+        }
+
+        .video-title {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .video-meta {
+            display: flex;
+            gap: 20px;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .video-description {
+            line-height: 1.6;
+            color: #444;
+            margin-bottom: 20px;
+        }
+
+        .video-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .video-tag {
+            background: rgba(107, 141, 214, 0.1);
+            color: var(--primary-color);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        .video-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .action-btn {
+            background: none;
+            border: none;
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 8px 16px;
+            border-radius: 20px;
+            transition: all 0.2s;
+            font-size: 1rem;
+        }
+
+        .action-btn:hover {
+            background: rgba(107, 141, 214, 0.1);
+            color: var(--primary-color);
+        }
+
+        .health-notes {
+            background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(76, 175, 80, 0.2));
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin-top: 30px;
+            border-left: 4px solid var(--accent-color);
+        }
+
+        .health-notes h3 {
+            color: var(--accent-color);
+            margin-top: 0;
+        }
+
+        /* 统一导航栏 */
+        .nav-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 12px 0;
+            display: flex;
+            justify-content: space-around;
+            box-shadow: 0 -4px 12px rgba(0,0,0,0.05);
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #666;
+            padding: 8px 16px;
+            border-radius: 12px;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+
+        .nav-item.active {
+            color: var(--primary-color);
+            background: rgba(107, 141, 214, 0.1);
+        }
+
+        .nav-item i {
+            font-size: 1.4rem;
+            margin-bottom: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="{% url 'videos:recommend' %}" class="back-btn">
+            <i class="fas fa-arrow-left"></i> 返回推荐列表
+        </a>
+        
+        <div class="video-container">
+            <iframe class="video-player" src="{{ video.video_url }}" allowfullscreen></iframe>
+            
+            <div class="video-details">
+                <h1 class="video-title">{{ video.title }}</h1>
+                
+                <div class="video-meta">
+                    <div class="meta-item">
+                        <i class="fas fa-clock"></i>
+                        <span>{{ video.duration }}分钟</span>
+                    </div>
+                    <div class="meta-item">
+                        <i class="fas fa-dumbbell"></i>
+                        <span>
+                            {% if video.difficulty == 'BG' %}初级
+                            {% elif video.difficulty == 'IM' %}中级
+                            {% elif video.difficulty == 'AD' %}高级
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="meta-item">
+                        <i class="fas fa-toolbox"></i>
+                        <span>{{ video.equipment_needed|default:"无需器材" }}</span>
+                    </div>
+                </div>
+                
+                <div class="video-tags">
+                    <span class="video-tag">
+                        {% if video.category == 'ST' %}力量训练
+                        {% elif video.category == 'EN' %}耐力训练
+                        {% elif video.category == 'FL' %}柔韧性训练
+                        {% elif video.category == 'WT' %}减重训练
+                        {% elif video.category == 'MG' %}增肌训练
+                        {% elif video.category == 'RC' %}康复训练
+                        {% elif video.category == 'BG' %}初学者指南
+                        {% endif %}
+                    </span>
+                    {% if video.health_conditions %}
+                    <span class="video-tag">{{ video.health_conditions }}</span>
+                    {% endif %}
+                </div>
+                
+                <div class="video-description">
+                    {{ video.description }}
+                </div>
+                
+                <div class="video-actions">
+                    <button id="like-btn" class="action-btn" data-id="{{ video.id }}">
+                        <i class="far fa-heart"></i> 喜欢
+                    </button>
+                    <button id="save-btn" class="action-btn" data-id="{{ video.id }}">
+                        <i class="far fa-bookmark"></i> 收藏
+                    </button>
+                    <button id="share-btn" class="action-btn">
+                        <i class="fas fa-share-alt"></i> 分享
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="health-notes">
+            <h3>健康提示</h3>
+            <p>根据您的健康状况，在进行此视频训练时请注意以下几点：</p>
+            <ul>
+                <li>开始前进行充分的热身，结束后进行拉伸放松</li>
+                <li>如果您有{{ user.profile.medical_conditions|default:"任何健康问题" }}，请根据自身情况调整训练强度</li>
+                <li>保持正确的姿势，避免受伤</li>
+                <li>如果感到不适，请立即停止训练并咨询医生</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- 统一导航栏 -->
+    <nav class="nav-bar">
+        <a href="{% url 'plans:index' %}" class="nav-item">
+            <i class="fas fa-calendar-alt"></i>
+            <span>计划管理</span>
+        </a>
+        <a href="{% url 'nutrition:index' %}" class="nav-item">
+            <i class="fas fa-heartbeat"></i>
+            <span>身体数据</span>
+        </a>
+        <a href="{% url 'coach:index' %}" class="nav-item">
+            <i class="fas fa-robot"></i>
+            <span>智能助手</span>
+        </a>
+        <a href="{% url 'videos:index' %}" class="nav-item active">
+            <i class="fas fa-video"></i>
+            <span>健康视频</span>
+        </a>
+        <a href="{% url 'settings:index' %}" class="nav-item">
+            <i class="fas fa-user-cog"></i>
+            <span>个人设置</span>
+        </a>
+    </nav>
+    
+    <script>
+        // 喜欢和收藏功能
+        document.getElementById('like-btn').addEventListener('click', async function() {
+            const videoId = this.dataset.id;
+            try {
+                const response = await fetch(`/videos/like/${videoId}/`);
+                const data = await response.json();
+                if (data.status === 'success') {
+                    this.innerHTML = '<i class="fas fa-heart"></i> 已喜欢';
+                    this.style.color = '#e74c3c';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+        
+        document.getElementById('save-btn').addEventListener('click', async function() {
+            const videoId = this.dataset.id;
+            try {
+                const response = await fetch(`/videos/save/${videoId}/`);
+                const data = await response.json();
+                if (data.status === 'success') {
+                    this.innerHTML = '<i class="fas fa-bookmark"></i> 已收藏';
+                    this.style.color = '#f39c12';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+        
+        // 分享功能
+        document.getElementById('share-btn').addEventListener('click', function() {
+            alert('分享功能即将上线！');
+        });
+    </script>
+</body>
+</html>
