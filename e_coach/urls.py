@@ -30,9 +30,3 @@ urlpatterns = [
     path('videos/', include('videos.urls')),  # 新增视频URLs
     path('', RedirectView.as_view(pattern_name='accounts:login'), name='home'),
 ]
-
-if settings.DEBUG:
-    import debug_toolbar
-    urlpatterns = [
-        path('__debug__/', include(debug_toolbar.urls)),
-    ] + urlpatterns

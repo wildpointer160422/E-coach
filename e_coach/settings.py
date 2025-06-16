@@ -46,8 +46,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    # 调试工具
-    'debug_toolbar',
+    # 移除这行: 'debug_toolbar',
     # 自定义应用
     'accounts.apps.AccountsConfig',
     'plans.apps.PlansConfig',
@@ -65,7 +64,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "debug_toolbar.middleware.DebugToolbarMiddleware",
+    # 移除这行: "debug_toolbar.middleware.DebugToolbarMiddleware",
 ]
 
 ROOT_URLCONF = "e_coach.urls"

@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from .models import HealthVideo, UserVideoInteraction
+from accounts.models import UserProfile
 import random
 
 @login_required
@@ -11,6 +12,18 @@ def index(request):
 
 @login_required
 def recommend_videos(request):
+    # 检查用户是否有profile，如果没有则创建一个默认的
+    try:
+        user_profile = request.user.profile
+    except UserProfile.DoesNotExist:
+        # 为用户创建默认的profile
+        user_profile = UserProfile.objects.create(
+            user=request.user,
+            activity_level='M',  # 默认中等活动水平
+            training_goal='MN',  # 默认保持健康
+            experience_level='BG'  # 默认初级
+        )
+    
     # 简化版推荐算法 - 基于用户健康状况和训练目标
     user_profile = request.user.profile
     
